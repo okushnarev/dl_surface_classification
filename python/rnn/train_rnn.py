@@ -14,7 +14,8 @@ from torch.utils.data import DataLoader
 
 from models.rnn import TabularRNN
 from python.utils.dataset import SequentialTabularDataset, create_sequences
-
+from python.utils.save_load import save_checkpoint
+from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -25,6 +26,8 @@ def parse_args():
     parser.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     parser.add_argument('--config', type=str, default=None, help='Path to config file')
     parser.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
+    parser.add_argument('--save_every', type=int, default=50, help='Save model every N epochs')
+    parser.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
     return parser.parse_args()
 
 def main():
@@ -33,6 +36,10 @@ def main():
     print(f'Using device: {device.upper()}\n',)
 
     data_path = Path('data/datasets')
+
+    exp_name = args.exp_name or datetime.now().strftime("%Y%m%d_%H%M%S")
+    ckpt_path = Path('data/runs') / exp_name
+    ckpt_path.mkdir(parents=True, exist_ok=True)
 
     df_train = pd.read_csv(data_path / 'train.csv')
     df_test = pd.read_csv(data_path / 'test.csv')
@@ -138,6 +145,10 @@ def main():
                     total += labels.size(0)
                     correct += (predicted == labels).sum().item()
             print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
+
+        # Save checkpoint every N epoch
+        if epoch % args.save_every == 0:
+            save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'last.pt')
 
     # Test
     print('\n--- Starting Evaluation ---')
