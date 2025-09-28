@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     parser.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     parser.add_argument('--config', type=str, default=None, help='Path to config file')
+    parser.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
     return parser.parse_args()
 
 def main():
@@ -124,6 +125,19 @@ def main():
 
         current_lr = optimizer.param_groups[0]['lr']
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.10f}, LR: {current_lr:.3e}')
+
+        # Test every N epochs
+        if epoch % args.test_every == 0:
+            model.eval()
+            with torch.no_grad():
+                correct, total = 0, 0
+                for sequences, labels in test_loader:
+                    outputs = model(sequences)
+                    _, predicted = torch.max(outputs.data, 1)
+
+                    total += labels.size(0)
+                    correct += (predicted == labels).sum().item()
+            print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
 
     # Test
     print('\n--- Starting Evaluation ---')
