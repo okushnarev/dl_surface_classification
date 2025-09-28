@@ -1,32 +1,20 @@
 import argparse
-
-import numpy as np
-from pathlib import Path
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-import matplotlib.pyplot as plt
-import torch
-
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-
-import os
 import json
-from sklearn.base import BaseEstimator, ClassifierMixin
-from torch.utils.data import TensorDataset, DataLoader
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader
 
 from models.rnn import TabularRNN
 from python.utils.dataset import SequentialTabularDataset, create_sequences
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -35,6 +23,7 @@ def parse_args():
     parser.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
     parser.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     parser.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
+    parser.add_argument('--config', type=str, default=None, help='Path to config file')
     return parser.parse_args()
 
 def main():
@@ -85,22 +74,34 @@ def main():
 
     # Model
     input_dim = len(feature_cols)
-    embedding_size = 32
-    mlp_hidden_dims = [64, 16]
-    rnn_hidden_dim = 64
+    if args.config is not None:
+        with open(args.config, 'r') as f:
+            config = json.load(f)['params']
+
+            embedding_dim = config['embedding_dim']
+            rnn_hidden_dim = config['rnn_hidden_dim']
+            mlp_hidden_dims = []
+            for idx in range(config['mlp_n_layers']):
+                mlp_hidden_dims.append(config[f'mlp_dim_{idx}'])
+
+            start_lr = config['lr']
+    else:
+        embedding_dim = 32
+        mlp_hidden_dims = [64, 16]
+        rnn_hidden_dim = 64
+        start_lr = 1e-2
 
     model = TabularRNN(
         input_dim=input_dim,
         mlp_hidden_dims=mlp_hidden_dims,
-        embedding_dim=embedding_size,
+        embedding_dim=embedding_dim,
         rnn_hidden_dim=rnn_hidden_dim,
         num_classes=num_classes,
         device=device
     )
 
     # Training
-    num_epochs = 100
-    start_lr = 1e-2
+    num_epochs = args.epochs
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=start_lr)
@@ -124,23 +125,18 @@ def main():
         current_lr = optimizer.param_groups[0]['lr']
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.10f}, LR: {current_lr:.3e}')
 
-    # Eval
+    # Test
     print('\n--- Starting Evaluation ---')
     model.eval()
     with torch.no_grad():
         correct, total = 0, 0
-        score, cnt = [], []
         for sequences, labels in test_loader:
             outputs = model(sequences)
             _, predicted = torch.max(outputs.data, 1)
-            score.append(accuracy_score(labels.cpu(), predicted.cpu()))
-            cnt.append(labels.size(0))
 
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
-    print(f'Score (sklearn): {100 * np.average(score, weights=cnt):.2f} %')
-
 
 if __name__ == '__main__':
     main()
