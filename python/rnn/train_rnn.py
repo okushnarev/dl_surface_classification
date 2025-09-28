@@ -14,8 +14,9 @@ from torch.utils.data import DataLoader
 
 from models.rnn import TabularRNN
 from python.utils.dataset import SequentialTabularDataset, create_sequences
-from python.utils.save_load import save_checkpoint
+from python.utils.save_load import load_checkpoint, save_checkpoint
 from datetime import datetime
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -28,12 +29,15 @@ def parse_args():
     parser.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
     parser.add_argument('--save_every', type=int, default=50, help='Save model every N epochs')
     parser.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
+    parser.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
+                        help='Resume loads checkpoint and continue training\n Restart overwrites everything')
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
-    print(f'Using device: {device.upper()}\n',)
+    print(f'Using device: {device.upper()}\n', )
 
     data_path = Path('data/datasets')
 
@@ -111,12 +115,18 @@ def main():
     # Training
     num_epochs = args.epochs
 
-    criterion = nn.CrossEntropyLoss()
+    # Load model and optimizer from checkpoint if allowed by behavior
     optimizer = optim.Adam(model.parameters(), lr=start_lr)
+    start_epoch = 0
+    if args.restart_behavior == 'resume' and (ckpt := ckpt_path / 'checkpoint.pth').exists():
+        print('Resuming training from checkpoint')
+        start_epoch = load_checkpoint(model, optimizer, ckpt, device)
+
+    criterion = nn.CrossEntropyLoss()
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
 
     print('\n--- Starting Training ---')
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0
         for sequences, labels in train_loader:
@@ -162,6 +172,7 @@ def main():
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
+
 
 if __name__ == '__main__':
     main()
