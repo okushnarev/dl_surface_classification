@@ -179,6 +179,7 @@ def main():
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
+    save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'last.pt')
 
 
 if __name__ == '__main__':
