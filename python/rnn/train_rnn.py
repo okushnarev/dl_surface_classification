@@ -126,6 +126,7 @@ def main():
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
 
     print('\n--- Starting Training ---')
+    best_acc = 0
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0
@@ -154,7 +155,13 @@ def main():
 
                     total += labels.size(0)
                     correct += (predicted == labels).sum().item()
-            print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
+            test_acc = correct / total
+            print(f'Accuracy on the test set: {100 * test_acc:.2f} %')
+            # Save model if the best accuracy achieved
+            if test_acc > best_acc:
+                best_acc = test_acc
+                print('The best accuracy found')
+                save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'best.pt')
 
         # Save checkpoint every N epoch
         if epoch % args.save_every == 0:
