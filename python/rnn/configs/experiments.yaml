@@ -1,0 +1,53 @@
+- name: rnn_kalman_type_1
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_1
+
+- name: rnn_kalman_type_2
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_2
+
+- name: rnn_kalman_type_3
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_3
+
+- name: rnn_no_filter_type_1
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_1
+
+- name: rnn_no_filter_type_2
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_2
+
+- name: rnn_no_filter_type_3
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_3
