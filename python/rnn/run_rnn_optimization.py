@@ -13,7 +13,7 @@ if __name__ == '__main__':
     for idx, config in enumerate(experiments):
         print('-' * 50)
         print(f'Running experiment {idx + 1}/{len(experiments)}: {config["name"]}')
-        print('-' * 50)
+
 
         # Build the command
         command = [sys.executable, directory / 'optimize_rnn.py']
@@ -23,6 +23,8 @@ if __name__ == '__main__':
                 for k, v in value.items():
                     command.extend([f'--{k}', str(v)])
 
+        print(' '.join([str(c) for c in command]))
+        print('-' * 50)
         try:
             subprocess.run(command, check=True)
         except subprocess.CalledProcessError as e:
