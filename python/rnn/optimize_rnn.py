@@ -160,7 +160,7 @@ def main():
         'params': best_params,
         'accuracy': best_acc,
     }
-    with open(params_path / f'best_params.json', 'w') as f:
+    with open(params_path / f'best_params_{args.filter}_{args.ds_type}.json', 'w') as f:
         json.dump(res, f, indent=2)
 
 
