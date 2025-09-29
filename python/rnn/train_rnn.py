@@ -1,5 +1,6 @@
 import argparse
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
@@ -71,6 +72,10 @@ def main():
     scaler = StandardScaler()
     df_train[feature_cols] = scaler.fit_transform(df_train[feature_cols])
     df_test[feature_cols] = scaler.transform(df_test[feature_cols])
+
+    # Save scaler
+    with open(ckpt_path / 'scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
 
     # Create the sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, sequence_length)
