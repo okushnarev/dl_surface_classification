@@ -14,6 +14,10 @@ if __name__ == '__main__':
         print('-' * 50)
         print(f'Running experiment {idx + 1}/{len(experiments)}: {config["name"]}')
 
+        if 'skip' in config and config['skip']:
+            print('Skipping experiment due to config param "skip"')
+            print('-' * 50)
+            continue
 
         # Build the command
         command = [sys.executable, directory / 'optimize_rnn.py']

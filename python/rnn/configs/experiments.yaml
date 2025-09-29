@@ -1,4 +1,5 @@
 - name: rnn_kalman_type_1
+  skip: True
   optimization:
     epochs: 15
   train:
