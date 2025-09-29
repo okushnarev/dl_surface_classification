@@ -95,13 +95,13 @@ def main():
         with open(args.config, 'r') as f:
             config = json.load(f)['params']
 
-            embedding_dim = config['embedding_dim']
-            rnn_hidden_dim = config['rnn_hidden_dim']
-            mlp_hidden_dims = []
-            for idx in range(config['mlp_n_layers']):
-                mlp_hidden_dims.append(config[f'mlp_dim_{idx}'])
+        embedding_dim = config['embedding_dim']
+        rnn_hidden_dim = config['rnn_hidden_dim']
+        mlp_hidden_dims = []
+        for idx in range(config['mlp_n_layers']):
+            mlp_hidden_dims.append(config[f'mlp_dim_{idx}'])
 
-            start_lr = config['lr']
+        start_lr = config['lr']
     else:
         embedding_dim = 32
         mlp_hidden_dims = [64, 16]
