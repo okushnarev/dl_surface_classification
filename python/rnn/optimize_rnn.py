@@ -32,23 +32,23 @@ def parse_args():
 def objective(trial, val_dataset, input_dim, num_classes, batch_size, device, epochs, seed):
     '''Defines a single trial using a fixed train/validation split.'''
 
-    # --- Suggest Hyperparameters ---
+    # Suggest Hyperparameters
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=6)
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
     mlp_dims = [2 **  trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
-    # --- Create DataLoaders for this trial ---
+    # Create DataLoaders for this trial
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    # --- Instantiate Model and Optimizer ---
+    # Instantiate Model and Optimizer
     model = TabularRNN(input_dim, mlp_dims, embedding_dim, rnn_hidden_dim, num_classes).to(device)
     optimizer = AdamW(model.parameters(), lr=lr)
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
     criterion = nn.CrossEntropyLoss()
 
-    # --- Training & Validation Loop ---
+    # Training & Validation Loop
     # Train for a fixed number of epochs for each trial
     accuracy = 0
     for epoch in range(epochs):

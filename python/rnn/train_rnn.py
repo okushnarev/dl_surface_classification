@@ -1,14 +1,13 @@
 import argparse
 import json
 import pickle
+from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
@@ -16,7 +15,6 @@ from torch.utils.data import DataLoader
 from models.rnn import TabularRNN
 from python.utils.dataset import SequentialTabularDataset, create_sequences
 from python.utils.save_load import load_checkpoint, save_checkpoint
-from datetime import datetime
 
 
 def parse_args():

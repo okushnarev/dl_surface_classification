@@ -35,14 +35,14 @@ def parse_args():
 def objective(trial, full_train_dataset, input_dim, num_classes, batch_size, cv_splits, device, epochs, seed):
     '''Defines a single trial for hyperparameter optimization with 3-fold CV.'''
 
-    # --- Suggest Hyperparameters ---
+    # Suggest Hyperparameters
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=6)
     mlp_n_layers = trial.suggest_int('mlp_n_layers', low=1, high=4)
     mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
-    # --- Cross-Validation Setup ---
+    # Cross-Validation Setup
     # StratifiedKFold is good for classification to preserve class distribution.
     kf = StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=seed)
     fold_accuracies = []
@@ -57,13 +57,13 @@ def objective(trial, full_train_dataset, input_dim, num_classes, batch_size, cv_
         train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
 
-        # --- Instantiate Model and Optimizer for this Fold ---
+        # Instantiate Model and Optimizer for this Fold
         model = TabularRNN(input_dim, mlp_dims, embedding_dim, rnn_hidden_dim, num_classes).to(device)
         optimizer = AdamW(model.parameters(), lr=lr)
         scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
         criterion = nn.CrossEntropyLoss()
 
-        # --- Training & Validation Loop for the Fold ---
+        # Training & Validation Loop for the Fold
         # We train for a smaller number of epochs during HPO search to be faster.
         for epoch in range(epochs):
             model.train()
@@ -76,7 +76,7 @@ def objective(trial, full_train_dataset, input_dim, num_classes, batch_size, cv_
                 optimizer.step()
 
 
-            # --- Validation and Pruning ---
+            # Validation and Pruning
             model.eval()
             correct, total = 0, 0
             val_loss = 0
