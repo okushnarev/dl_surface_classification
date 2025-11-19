@@ -24,7 +24,7 @@ class CNN(nn.Module):
                  num_steps: int,
                  cnn_configs: List[CNNLayerConfig],
                  mlp_configs: List[MLPLayerConfig],
-                 output_dim: int):
+                 num_classes: int):
         """
         A flexible 1D CNN framework built from configuration lists.
 
@@ -33,7 +33,7 @@ class CNN(nn.Module):
             num_steps (int): Length of the input sequence.
             cnn_configs (List[CNNLayerConfig]): List of configs for CNN blocks.
             mlp_configs (List[MLPLayerConfig]): List of configs for MLP blocks.
-            output_dim (int): Number of classes for the final output.
+            num_classes (int): Number of classes for the final output.
         """
         super().__init__()
 
@@ -81,14 +81,14 @@ class CNN(nn.Module):
             mlp_layers.append(nn.Linear(current_in_features, config.out_dim))
             mlp_layers.append(nn.ReLU())
 
-            if config.dropout_rate > 0:
-                mlp_layers.append(nn.Dropout(p=config.dropout_rate))
+            if config.dropout > 0:
+                mlp_layers.append(nn.Dropout(p=config.dropout))
 
             # Update the feature count for the next layer
             current_in_features = config.out_dim
 
         # Add the final output layer
-        mlp_layers.append(nn.Linear(current_in_features, output_dim))
+        mlp_layers.append(nn.Linear(current_in_features, num_classes))
 
         # The classifier starts with a Flatten layer
         self.classifier = nn.Sequential(nn.Flatten(), *mlp_layers)
