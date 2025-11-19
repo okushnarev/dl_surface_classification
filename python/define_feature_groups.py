@@ -21,7 +21,10 @@ def main():
             ],
         }
         in_data['type_3'] = in_data['type_1'] + in_data['type_2']
+        if filter == 'kalman':
+            in_data['type_4'] = in_data['type_2'] + ['movedir']
         datasets[filter] = in_data
+
 
     with (output_path / 'datasets_features.json').open('w') as f:
         json.dump(datasets, f, indent=2)
