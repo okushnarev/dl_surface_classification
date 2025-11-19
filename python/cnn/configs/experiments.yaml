@@ -1,0 +1,69 @@
+- name: cnn_kalman_type_1
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_1
+
+- name: cnn_kalman_type_2
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_2
+
+- name: cnn_kalman_type_3
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: kalman
+    ds_type: type_3
+
+- name: cnn_no_filter_type_1
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_1
+
+- name: cnn_no_filter_type_2
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_2
+
+- name: cnn_no_filter_type_3
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 150
+  common:
+    filter: no_filter
+    ds_type: type_3
+
+- name: cnn_kalman_type_4
+  skip: False
+  optimization:
+    epochs: 15
+  train:
+    epochs: 200
+  common:
+    filter: kalman
+    ds_type: type_4
