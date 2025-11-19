@@ -122,6 +122,7 @@ def main():
     group_cols = ['surf', 'movedir', 'speedamp']
     feature_cols = datasets[args.filter][args.ds_type]
     target_col = 'surf'
+
     sequence_length = args.seq_len
 
     batch_size = 2 ** 15
