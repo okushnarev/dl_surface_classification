@@ -37,7 +37,7 @@ if __name__ == '__main__':
             if key in ('optimization', 'common'):
                 # Parse inner dictionaries
                 for k, v in value.items():
-                    command.extend([f'--{k}', str(v)])
+                    command.extend([f'--{k}', str(v)] if v != 'None' else [f'--{k}'])
 
         print(' '.join([str(c) for c in command]))
         print('-' * 50)
