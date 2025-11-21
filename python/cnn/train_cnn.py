@@ -1,7 +1,6 @@
 import json
 
 from models.cnn import CNN, CNNLayerConfig, MLPLayerConfig
-from python.cnn.utils import dict_to_configs
 from python.train_seq import train
 
 
@@ -10,7 +9,15 @@ def prep_cnn_cfg(cfg_path, input_dim, num_classes, sequence_length):
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
-        cnn_configs, mlp_configs = dict_to_configs(config)
+        cnn_configs = [
+            CNNLayerConfig(out_channels=config[f'cnn_out_ch_{idx}'], kernel_size=3)
+            for idx in range(config['cnn_n_layers'])
+        ]
+
+        mlp_configs = [
+            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=0.2)
+            for idx in range(config['mlp_n_layers'])
+        ]
 
         start_lr = config['lr']
     else:
