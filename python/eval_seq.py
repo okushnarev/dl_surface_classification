@@ -52,10 +52,11 @@ def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[st
 
     cnt = dict()
     new_dict = dict()
+    nets_names_ordered = sorted(nets, key=len, reverse=True)
     for name, acc in d.items():
         # find net type
         net_type = ''
-        for n in sorted(nets, key=len, reverse=True):
+        for n in nets_names_ordered:
             if n in name:
                 net_type = n
                 break
