@@ -2,8 +2,14 @@ import torch.nn as nn
 
 
 class TabularRNN(nn.Module):
-    def __init__(self, input_dim, mlp_hidden_dims, embedding_dim, rnn_hidden_dim, num_classes, device='cpu'):
-        super(TabularRNN, self).__init__()
+    def __init__(self,
+                 input_dim,
+                 mlp_hidden_dims, # TODO: update to MLPLayerConfig
+                 embedding_dim,
+                 rnn_hidden_dim,
+                 num_classes,
+                 device='cpu'):
+        super().__init__()
         self.embedding_dim = embedding_dim
 
         # Build MLP Encoder Block
