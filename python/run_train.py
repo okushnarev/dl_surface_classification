@@ -37,7 +37,8 @@ if __name__ == '__main__':
                 command.extend([f'--exp_name', str(value)])
 
                 param_file_name = '_'.join(['best', 'params'] + value.split('_')[1:])
-                command.extend([f'--config', f'data/params/{nn_name}_optim/{param_file_name}.json'])
+                if (p := Path(f'data/params/{nn_name}_optim/{param_file_name}.json')).exists():
+                    command.extend([f'--config', str(p)])
             elif key in ('train', 'common'):
                 # Parse inner dictionaries
                 for k, v in value.items():
