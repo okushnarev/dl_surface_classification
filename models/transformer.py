@@ -42,9 +42,6 @@ class Transformer(nn.Module):
         transformer_layer = nn.TransformerEncoderLayer(d_model=embedding_dim, nhead=num_heads, batch_first=True)
         self.transformer = nn.TransformerEncoder(transformer_layer, num_layers=num_transformer_layers)
 
-        # Layer norm
-        self.layer_norm = nn.LayerNorm(embedding_dim)
-
         # Classification head
         self.classifier = build_mlp(embedding_dim, classification_layers, num_classes, dropout=0.2)
 
@@ -56,7 +53,5 @@ class Transformer(nn.Module):
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = self.transformer(x)
-        x = x[:, 0, :]
-        x = self.layer_norm(x)
-        x = self.classifier()
+        x = self.classifier(x[:, 0, :])
         return x
