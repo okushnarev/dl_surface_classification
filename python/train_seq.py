@@ -55,7 +55,7 @@ def train(model_constructor, prep_cfg_func):
     target_col = 'surf'
     sequence_length = args.seq_len
 
-    batch_size = 2 ** 15
+    batch_size = 2 ** 12
 
     # Encode labels
     label_encoder = LabelEncoder()
