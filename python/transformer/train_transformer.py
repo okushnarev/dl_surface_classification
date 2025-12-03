@@ -24,11 +24,11 @@ def prep_transformer_cfg(cfg_path, input_dim, num_classes, sequence_length):
 
         start_lr = config['lr']
     else:
-        encoder_layers = [64, 128]
-        embedding_dim = 128
+        encoder_layers = [16, 32]
+        embedding_dim = 32
         num_heads = 2
-        num_transformer_layers = 3
-        classification_layers = [128]
+        num_transformer_layers = 2
+        classification_layers = [32]
 
         start_lr = 1e-2
 
