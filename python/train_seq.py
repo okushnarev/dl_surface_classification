@@ -97,7 +97,7 @@ def train(model_constructor, prep_cfg_func):
     # Load model and optimizer from checkpoint if allowed by behavior
     optimizer = optim.Adam(model.parameters(), lr=cfg['optimizer']['start_lr'])
     start_epoch = 0
-    if args.restart_behavior == 'resume' and (ckpt := ckpt_path / 'checkpoint.pth').exists():
+    if args.restart_behavior == 'resume' and (ckpt := ckpt_path / 'last.pt').exists():
         print('Resuming training from checkpoint')
         start_epoch = load_checkpoint(model, optimizer, ckpt, device)
 
