@@ -39,8 +39,16 @@ class Transformer(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, embedding_dim))
 
         # Transformer
-        transformer_layer = nn.TransformerEncoderLayer(d_model=embedding_dim, nhead=num_heads, batch_first=True)
-        self.transformer = nn.TransformerEncoder(transformer_layer, num_layers=num_transformer_layers)
+        transformer_layer = nn.TransformerEncoderLayer(
+            d_model=embedding_dim,
+            nhead=num_heads,
+            batch_first=True,
+            dropout=0.2
+        )
+        self.transformer = nn.TransformerEncoder(
+            transformer_layer,
+            num_layers=num_transformer_layers
+        )
 
         # Classification head
         self.classifier = build_mlp(embedding_dim, classification_layers, num_classes, dropout=0.2)
