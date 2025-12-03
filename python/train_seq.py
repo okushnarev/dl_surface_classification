@@ -102,7 +102,7 @@ def train(model_constructor, prep_cfg_func):
         start_epoch = load_checkpoint(model, optimizer, ckpt, device)
 
     criterion = nn.CrossEntropyLoss()
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=2, min_lr=1e-4)
 
     print('\n--- Starting Training ---')
     best_acc = 0
