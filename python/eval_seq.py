@@ -359,6 +359,7 @@ def main():
         df_bar_mean_acc,
         x='Classifier',
         y='accuracy',
+        text='accuracy',
         color='is_mem',
         color_discrete_map={True: '#EF553B', False: '#636EFA'},
         template='plotly_white',
@@ -366,6 +367,7 @@ def main():
         title='Linear Motion (Mean Accuracy)',
 
     )
+    fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
     fig.write_html(figure_path / f'{"_".join(nets)}_bar.html', include_plotlyjs='cdn')
 
     # Process circle square datasets
@@ -476,6 +478,7 @@ def main():
         accuracies,
         x='name',
         y='accuracy',
+        text='accuracy',
         color='ds_type',
         template='plotly_white',
         barmode='group',
@@ -483,6 +486,7 @@ def main():
         category_orders={'name': list(sorted_names)},
         title='Square Circle'
     )
+    fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 
     fig.write_html(figure_path / f'{"_".join(nets)}_bar_square_circle.html', include_plotlyjs='cdn')
 
