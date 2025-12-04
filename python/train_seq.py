@@ -83,7 +83,13 @@ def train(model_constructor, prep_cfg_func):
     train_dataset = SequentialTabularDataset(X_train, y_train, device=device)
     test_dataset = SequentialTabularDataset(X_test, y_test, device=device)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        pin_memory=True,
+        num_workers=2,
+    )
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Model
