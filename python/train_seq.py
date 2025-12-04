@@ -107,6 +107,7 @@ def train(model_constructor, prep_cfg_func):
 
     print('\n--- Starting Training ---')
     best_acc = 0
+    loss = 0
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0
