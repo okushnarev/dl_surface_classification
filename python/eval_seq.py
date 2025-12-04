@@ -233,6 +233,8 @@ def main():
         model.eval()
         with torch.no_grad():
             for sequences, labels in eval_loader:
+                sequences = sequences.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
                 outputs = model(sequences)
                 _, predicted = torch.max(outputs.data, 1)
 
