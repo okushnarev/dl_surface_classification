@@ -159,5 +159,5 @@ def train(model_constructor, prep_cfg_func):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
-    save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'last.pt')
+    save_checkpoint(model, optimizer, num_epochs, loss, ckpt_path / 'last.pt')
 
