@@ -140,6 +140,8 @@ def train(model_constructor, prep_cfg_func):
             with torch.no_grad():
                 correct, total = 0, 0
                 for sequences, labels in test_loader:
+                    sequences = sequences.to(device, non_blocking=True)
+                    labels = labels.to(device, non_blocking=True)
                     outputs = model(sequences)
                     _, predicted = torch.max(outputs.data, 1)
 
