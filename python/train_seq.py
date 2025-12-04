@@ -99,7 +99,8 @@ def train(model_constructor, prep_cfg_func):
     start_epoch = 0
     if args.restart_behavior == 'resume' and (ckpt := ckpt_path / 'last.pt').exists():
         print('Resuming training from checkpoint')
-        start_epoch = load_checkpoint(model, optimizer, ckpt, device)
+        checkpoint = load_checkpoint(model, optimizer, ckpt, device)
+        start_epoch = checkpoint['epoch']
 
     criterion = nn.CrossEntropyLoss()
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=2, min_lr=1e-4)

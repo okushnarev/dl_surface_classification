@@ -38,10 +38,4 @@ def load_checkpoint(model, optimizer, filepath, device='cpu'):
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    start_epoch = checkpoint['epoch']
-    last_loss = checkpoint['loss']
-
-    print(f'=> Loaded checkpoint. Resuming from epoch {start_epoch} with last loss {last_loss:.4f}')
-
-    # Return the epoch to start training from
-    return start_epoch
+    return checkpoint
