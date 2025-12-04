@@ -26,8 +26,8 @@ def prep_transformer_cfg(cfg_path, input_dim, num_classes, sequence_length):
     else:
         encoder_layers = [16, 32]
         embedding_dim = 32
-        num_heads = 2
-        num_transformer_layers = 2
+        num_heads = 1
+        num_transformer_layers = 1
         classification_layers = [32]
 
         start_lr = 1e-2
