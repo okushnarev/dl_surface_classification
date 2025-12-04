@@ -33,6 +33,7 @@ def parse_args():
 
 
 def train(model_constructor, prep_cfg_func):
+    torch.multiprocessing.set_start_method('spawn')
     args = parse_args()
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device.upper()}\n', )
@@ -80,8 +81,8 @@ def train(model_constructor, prep_cfg_func):
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
     # Create DataLoaders
-    train_dataset = SequentialTabularDataset(X_train, y_train, device=device)
-    test_dataset = SequentialTabularDataset(X_test, y_test, device=device)
+    train_dataset = SequentialTabularDataset(X_train, y_train)
+    test_dataset = SequentialTabularDataset(X_test, y_test)
 
     train_loader = DataLoader(
         train_dataset,
@@ -118,6 +119,8 @@ def train(model_constructor, prep_cfg_func):
         model.train()
         epoch_loss = 0
         for sequences, labels in train_loader:
+            sequences = sequences.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
             outputs = model(sequences)
             loss = criterion(outputs, labels)
             epoch_loss += loss.item()

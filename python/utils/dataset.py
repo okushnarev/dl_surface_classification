@@ -7,18 +7,17 @@ from torch.utils.data import Dataset
 class SequentialTabularDataset(Dataset):
     'Custom Dataset for sequences of tabular data.'
 
-    def __init__(self, features, labels, device='cpu'):
+    def __init__(self, features, labels):
         self.features = features
         self.labels = labels
-        self.device = device
 
     def __len__(self):
         return len(self.features)
 
     def __getitem__(self, idx):
         # Return a sequence and its corresponding single label
-        return torch.tensor(self.features[idx], dtype=torch.float32, device=self.device), \
-            torch.tensor(self.labels[idx], dtype=torch.long, device=self.device)
+        return torch.tensor(self.features[idx], dtype=torch.float32), \
+            torch.tensor(self.labels[idx], dtype=torch.long)
 
 
 def create_sequences(df, group_cols, feature_cols, target_col, sequence_length, info_cols=None):
