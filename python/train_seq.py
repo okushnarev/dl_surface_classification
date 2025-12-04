@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     parser.add_argument('--config', type=str, default=None, help='Path to config file')
     parser.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
-    parser.add_argument('--save_every', type=int, default=50, help='Save model every N epochs')
+    parser.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
     parser.add_argument('--exp_name', type=str, default='debug', help='Experiment name for a run')
     parser.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
                         help='Resume loads checkpoint and continue training\n Restart overwrites everything')
