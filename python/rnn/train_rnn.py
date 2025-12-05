@@ -4,7 +4,7 @@ from models.rnn import TabularRNN
 from python.train_seq import train
 
 
-def prep_rnn_cfg(cfg_path, input_dim, num_classes, sequence_length):
+def prep_rnn_cfg(cfg_path, input_dim, num_classes, sequence_length=None):
     if cfg_path is not None:
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
