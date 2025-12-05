@@ -168,7 +168,7 @@ def main():
                 num_classes,
                 sequence_len
             )
-            model = prep_model(**cfg).to(device)
+            model = prep_model(**cfg['model']).to(device)
 
             # load model
             checkpoint = torch.load(ckpt_path, map_location=device)
