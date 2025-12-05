@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class SequentialTabularDataset(Dataset):
-    'Custom Dataset for sequences of tabular data.'
+    """Custom Dataset for sequences of tabular data."""
 
     def __init__(self, features, labels):
         self.features = features
