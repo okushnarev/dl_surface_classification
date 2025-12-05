@@ -201,6 +201,11 @@ def main():
     ckpt_type = args.ckpt_type
     models: dict[str, Model] = {}
 
+    # Figure path
+    figure_prefix = "_".join(nets)
+    figure_path = Path('figures') / 'evaluation' / args.ds / figure_prefix
+    figure_path.mkdir(parents=True, exist_ok=True)
+
     for net in nets:
         exp_cfg_path = Path(f'python/{net}/configs/experiments.yaml')
         with open(exp_cfg_path, 'r') as f:
@@ -384,7 +389,7 @@ def main():
         elif annotation.text in res_dfs.keys():
             annotation.x = -0.03
             annotation.textangle = 0
-    fig.write_html(figure_path / f'{"_".join(nets)}_radial.html', include_plotlyjs='cdn')
+    fig.write_html(figure_path / f'{figure_prefix}_radial.html', include_plotlyjs='cdn')
 
     # Bar plot mean accuracies
     df_bar_mean_acc = pd.DataFrame(
@@ -410,7 +415,7 @@ def main():
 
     )
     fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig.write_html(figure_path / f'{"_".join(nets)}_bar.html', include_plotlyjs='cdn')
+    fig.write_html(figure_path / f'{figure_prefix}_bar.html', include_plotlyjs='cdn')
 
     # Process circle square datasets
     df_circle = pd.read_csv(ds_path / 'circle_kalman.csv')
@@ -497,7 +502,7 @@ def main():
     )
     fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 
-    fig.write_html(figure_path / f'{"_".join(nets)}_bar_square_circle.html', include_plotlyjs='cdn')
+    fig.write_html(figure_path / f'{figure_prefix}_bar_square_circle.html', include_plotlyjs='cdn')
 
 
 if __name__ == '__main__':
