@@ -134,9 +134,13 @@ def run_inference(
 
     # Unscale certain columns if needed
     if model_name in exps_to_unscale:
+        # Create placeholder matrix with the shape that Scaler expects
+        dummy_data = np.zeros((len(info), len(feature_cols)))
+        # Copy data_to_unscale to its corresponding position in the placeholder matrix
         for _col in unscale_cols:
             dummy_data[:, feature_cols.index(_col)] = info[_col]
         dummy_data = scaler.inverse_transform(dummy_data)
+        # Take out only chosen unscaled data from the placeholder matrix
         for _col in unscale_cols:
             info[_col] = dummy_data[:, feature_cols.index(_col)]
 
