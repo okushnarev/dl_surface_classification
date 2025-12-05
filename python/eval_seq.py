@@ -14,9 +14,6 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader
 
-from models.cnn import CNNLayerConfig, MLPLayerConfig
-from models.rnn import TabularRNN
-from python.cnn.train_cnn import CNNTrainWrapper
 from python.utils.dataset import SequentialTabularDataset, create_sequences
 
 
@@ -132,9 +129,6 @@ def main():
             cfg_path = Path(f'data/params/{net}_optim/best_params_{temp_name}.json')
             ckpt_path = Path('data/runs') / exp['name'] / f'{ckpt_type}.pt'
 
-            with open(cfg_path, 'r') as f:
-                config = json.load(f)['params']
-
             filter_type = exp['common']['filter']
             ds_type = exp['common']['ds_type']
             features = ds_features[filter_type][ds_type]
@@ -144,41 +138,36 @@ def main():
 
             match net:
                 case 'rnn':
-                    # Hyperparams
-                    embedding_dim = config['embedding_dim']
-                    rnn_hidden_dim = config['rnn_hidden_dim']
-                    mlp_hidden_dims = []
-                    for idx in range(config['mlp_n_layers']):
-                        mlp_hidden_dims.append(config[f'mlp_dim_{idx}'])
+                    from python.rnn.train_rnn import prep_rnn_cfg
+                    from models.rnn import TabularRNN
 
-                    model = TabularRNN(
-                        input_dim=input_dim,
-                        mlp_hidden_dims=mlp_hidden_dims,
-                        embedding_dim=embedding_dim,
-                        rnn_hidden_dim=rnn_hidden_dim,
-                        num_classes=num_classes,
-                        device=device
-                    )
+                    prep_cfg = prep_rnn_cfg
+                    prep_model = TabularRNN
+
                 case 'cnn' | 'cnn_manual':
-                    cnn_configs = [
-                        CNNLayerConfig(out_channels=config[f'cnn_out_ch_{idx}'], kernel_size=3)
-                        for idx in range(config['cnn_n_layers'])
-                    ]
+                    from python.cnn.train_cnn import prep_cnn_cfg
+                    from python.cnn.train_cnn import CNNTrainWrapper
 
-                    mlp_configs = [
-                        MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=0.2)
-                        for idx in range(config['mlp_n_layers'])
-                    ]
-                    model = CNNTrainWrapper(
-                        input_dim=input_dim,
-                        num_steps=sequence_len,
-                        cnn_configs=cnn_configs,
-                        mlp_configs=mlp_configs,
-                        num_classes=num_classes,
-                    )
+                    prep_cfg = prep_cnn_cfg
+                    prep_model = CNNTrainWrapper
+
+                case 'transfromer':
+                    from python.transformer.train_transformer import prep_transformer_cfg
+                    from models.transformer import Transformer
+
+                    prep_cfg = prep_transformer_cfg
+                    prep_model = Transformer
 
                 case _:
                     raise ValueError(f'Unknown net {net}')
+
+            cfg = prep_cfg(
+                cfg_path,
+                input_dim,
+                num_classes,
+                sequence_len
+            )
+            model = prep_model(**cfg).to(device)
 
             # load model
             checkpoint = torch.load(ckpt_path, map_location=device)
