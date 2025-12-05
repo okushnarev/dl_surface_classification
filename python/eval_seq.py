@@ -11,8 +11,9 @@ from plotly.subplots import make_subplots
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 
-from python.utils.eval_utils import Model, run_inference, top_sorted_dict
+from python.utils.eval_utils import Model, check_for_cache, compose_metadata, run_inference, top_sorted_dict
 from python.utils.plot_utils import bar_plot, prep_name_plotly
+from python.utils.save_load import save_csv_and_metadata
 
 
 def parse_args():
@@ -45,8 +46,8 @@ def main():
         case _:
             raise ValueError(f'Unknown dataset: {args.ds}')
 
-    figure_path = Path('figures') / 'evaluation' / args.ds
-    figure_path.mkdir(parents=True, exist_ok=True)
+    cache_path = Path('data') / 'results' / 'evaluation' / args.ds
+    cache_path.mkdir(parents=True, exist_ok=True)
 
     # Labels
     label_encoder = LabelEncoder()
@@ -150,20 +151,38 @@ def main():
     raw_results: dict[str, pd.DataFrame] = {}
 
     for model_name, model_wrapper in models.items():
-        info = run_inference(
-            model_name=model_name,
-            model_wrapper=model_wrapper,
-            df=df,
-            group_cols=group_cols,
-            target_col=target_col,
-            sequence_len=sequence_len,
-            info_cols=info_cols,
-            label_encoder=label_encoder,
-            device=device,
-            batch_size=batch_size,
-            exps_to_unscale=exps_to_unscale,
-            unscale_cols=unscale_cols
-        )
+
+        cache_info_path = cache_path / f'linear_{model_name}.csv'
+        cols_in_cache = info_cols + ['predictions']
+        use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
+
+        if use_cache:
+            print(f'Using cached results for: linear – {model_name}')
+        else:
+            print(f'Calculating results for: linear – {model_name}')
+            info = run_inference(
+                model_name=model_name,
+                model_wrapper=model_wrapper,
+                df=df,
+                group_cols=group_cols,
+                target_col=target_col,
+                sequence_len=sequence_len,
+                info_cols=info_cols,
+                label_encoder=label_encoder,
+                device=device,
+                batch_size=batch_size,
+                exps_to_unscale=exps_to_unscale,
+                unscale_cols=unscale_cols
+            )
+            # Save cache
+            model_metadata = compose_metadata(model_wrapper.model, model_name, list(info.columns))
+            save_csv_and_metadata(
+                info,
+                model_metadata,
+                cache_info_path,
+                index=False
+            )
+
         raw_results[model_name] = info
 
     # Create accuracy summaries
@@ -308,20 +327,36 @@ def main():
         _df[target_col] = label_encoder.transform(_df[target_col])
 
         for model_name, model_wrapper in models.items():
-            info = run_inference(
-                model_name=model_name,
-                model_wrapper=model_wrapper,
-                df=_df,
-                group_cols='group',
-                target_col=target_col,
-                sequence_len=sequence_len,
-                info_cols=info_cols,
-                label_encoder=label_encoder,
-                device=device,
-                batch_size=batch_size,
-                exps_to_unscale=exps_to_unscale,
-                unscale_cols=unscale_cols
-            )
+            cache_info_path = cache_path / f'{df_name}_{model_name}.csv'
+            cols_in_cache = info_cols + ['predictions']
+            use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
+
+            if use_cache:
+                print(f'Using cached results for: {df_name} – {model_name}')
+            else:
+                print(f'Calculating results for: {df_name} – {model_name}')
+                info = run_inference(
+                    model_name=model_name,
+                    model_wrapper=model_wrapper,
+                    df=_df,
+                    group_cols='group',
+                    target_col=target_col,
+                    sequence_len=sequence_len,
+                    info_cols=info_cols,
+                    label_encoder=label_encoder,
+                    device=device,
+                    batch_size=batch_size,
+                    exps_to_unscale=exps_to_unscale,
+                    unscale_cols=unscale_cols
+                )
+                # Save cache
+                model_metadata = compose_metadata(model_wrapper.model, model_name, list(info.columns))
+                save_csv_and_metadata(
+                    info,
+                    model_metadata,
+                    cache_info_path,
+                    index=False
+                )
 
             raw_names.append(model_name)
             raw_ds_types.append(df_name)
