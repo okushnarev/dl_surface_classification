@@ -114,7 +114,8 @@ def main():
     with open(features_path) as f:
         ds_features = json.load(f)
 
-    nets = args.nets
+    # Ensure same nets' names order
+    nets = sorted(args.nets, key=len, reverse=True)
     ckpt_type = args.ckpt_type
     models: dict[str, Model] = {}
 
