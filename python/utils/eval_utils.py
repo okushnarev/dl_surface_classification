@@ -5,11 +5,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 import torch
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader
 
 from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.model_hash import get_model_hash
+from python.utils.save_load import read_csv_and_metadata
 
 
 @dataclass
@@ -133,3 +136,17 @@ def compose_metadata(model: torch.nn.Module, model_name: str, columns: list[str]
         timestamp=datetime.now().isoformat(),
     )
 
+
+def check_for_cache(path: Path, model: torch.nn.Module, columns: list[str]) -> tuple[bool, pd.DataFrame | None]:
+    use_chache = False
+    info = None
+    if path.exists():
+        info, metadata = read_csv_and_metadata(path)
+        if metadata is not None:
+            model_hash = get_model_hash(model)
+            use_chache = (model_hash == metadata['hash']
+                          and sorted(metadata['columns']) == sorted(columns))
+        else:
+            print(f'Lacking metadata at path: {path}')
+
+    return use_chache, info
