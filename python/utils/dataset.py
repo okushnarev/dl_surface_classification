@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import pandas as pd
 
 from torch.utils.data import Dataset
 
@@ -20,17 +21,37 @@ class SequentialTabularDataset(Dataset):
             torch.tensor(self.labels[idx], dtype=torch.long)
 
 
-def create_sequences(df, group_cols, feature_cols, target_col, sequence_length, info_cols=None):
-    'Groups data and creates sliding window sequences.'
+def create_sequences(
+        df: pd.DataFrame,
+        group_cols: list[str],
+        feature_cols: list[str],
+        target_col: str,
+        sequence_length: int,
+        info_cols: list[str] = None
+) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Groups data and creates sliding window sequences
+
+    :param df: Dataframe to process
+    :param group_cols: Cols for df.groupby(). Order sensitive. Sequence generation resets between groups
+    :param feature_cols: Names of features
+    :param target_col: Target feature name (label). Use the last value in the window
+    :param sequence_length: Width of a sliding window. Number of rows in one sample
+    :param info_cols: (optional) Additional info, that can describe a whole window with single value (e.g. movement direction, surface type). Use the last value in the window
+
+    :return: A tuple containing numpy arrays
+        - X: Input sequences with shape (n_samples, sequence_length, n_features)
+        - y: Target labels with shape (n_samples,)
+        - info: (Optional) Metadata with shape (n_samples, n_info_cols) if info_cols is provided
+    """
     sequences = []
     labels = []
     infos = []
 
-    # Group by the columns that define an experiment
     grouped = df.groupby(group_cols)
 
     for _, group in grouped:
-        # Skip experiments that are too short to form a sequence
+        # Skip if too short
         if len(group) < sequence_length:
             continue
 
@@ -38,10 +59,9 @@ def create_sequences(df, group_cols, feature_cols, target_col, sequence_length, 
         label_data = group[target_col].values
         info_data = group[info_cols].values if info_cols else None
 
-        # Use a sliding window to create sequences
+        # Manual sliding window
         for i in range(len(group) - sequence_length + 1):
             seq = feature_data[i: i + sequence_length]
-            # The label for the sequence is the label of its last element
             label = label_data[i + sequence_length - 1]
 
             sequences.append(seq)
