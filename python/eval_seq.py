@@ -15,6 +15,7 @@ from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader
 
 from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.plot_utils import bar_plot, prep_name_plotly
 
 
 def parse_args():
@@ -66,22 +67,6 @@ def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[st
         cnt[net_type] += 1
     return new_dict
 
-
-def prep_name_plotly(model: Model):
-    net_type = model.net_type.upper()
-    filter_type = model.filter_type.replace('_', ' ')
-    dataset = model.dataset.replace('_', ' ')
-    return '<br>'.join([net_type, filter_type, dataset])
-
-def bar_plot(df, threshold, scale=1, **kwargs):
-    if len(df) > threshold * scale:
-        df = df.sort_index(ascending=False)
-        kwargs['x'], kwargs['y'] = kwargs['y'], kwargs['x']
-        if 'range_y' in kwargs:
-            kwargs['range_x'] = kwargs['range_y']
-            del kwargs['range_y']
-
-    return px.bar(df, **kwargs)
 
 def run_inference(
         model_name: str,
