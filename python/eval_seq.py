@@ -115,6 +115,7 @@ def run_inference(
     info['surf'] = label_encoder.inverse_transform(info['surf'])
 
     # Create loader
+    eval_dataset = SequentialTabularDataset(X, y)
     eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
 
     # Run tests
