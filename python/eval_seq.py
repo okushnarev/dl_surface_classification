@@ -493,7 +493,7 @@ def main():
         barmode='group',
         range_y=[0, 1.01],
         category_orders={'name': list(sorted_names)},
-        title='Square Circle'
+        title='Square and Circle Trajectories (Mean Accuracy)'
     )
     fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
 
