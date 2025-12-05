@@ -73,6 +73,15 @@ def prep_name_plotly(model: Model):
     dataset = model.dataset.replace('_', ' ')
     return '<br>'.join([net_type, filter_type, dataset])
 
+def bar_plot(df, threshold, scale=1, **kwargs):
+    if len(df) > threshold * scale:
+        df = df.sort_index(ascending=False)
+        kwargs['x'], kwargs['y'] = kwargs['y'], kwargs['x']
+        if 'range_y' in kwargs:
+            kwargs['range_x'] = kwargs['range_y']
+            del kwargs['range_y']
+
+    return px.bar(df, **kwargs)
 
 def run_inference(
         model_name: str,
@@ -386,9 +395,10 @@ def main():
         index=['accuracy']
     ).T.reset_index(names=['Classifier'])
     df_bar_mean_acc['is_mem'] = df_bar_mean_acc['Classifier'] == 'Mem'
-    # TODO: For bar plots add auto detection of excessive amount of models to transfrom from horizontal to vertical. Do not forget to reverse accuracy data for vertical
-    fig = px.bar(
+
+    fig = bar_plot(
         df_bar_mean_acc,
+        threshold=10,
         x='Classifier',
         y='accuracy',
         text='accuracy',
@@ -471,8 +481,10 @@ def main():
 
     # Bar plot for square circle
     sorted_names = accuracies_sorted['name'].unique()
-    fig = px.bar(
+    fig = bar_plot(
         accuracies,
+        threshold=10,
+        scale=2,
         x='name',
         y='accuracy',
         text='accuracy',
