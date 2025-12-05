@@ -74,6 +74,74 @@ def prep_name_plotly(model: Model):
     return '<br>'.join([net_type, filter_type, dataset])
 
 
+def run_inference(
+        model_name: str,
+        model_wrapper: Model,
+        df: pd.DataFrame,
+        group_cols: str | list[str],
+        target_col: str,
+        sequence_len: int,
+        info_cols: list[str],
+        label_encoder: LabelEncoder,
+        device: str,
+        batch_size: int,
+        exps_to_unscale: list[str],
+        unscale_cols: list[str]
+) -> pd.DataFrame:
+    """
+    Runs inference for a specific model on a dataframe.
+    Handles scaling, sequence creation, batched inference, and inverse transformation.
+    """
+    print(f'Running {model_name}')
+
+    # Scaler
+    ckpt_path = Path('data/runs') / model_name
+    scaler_path = ckpt_path / 'scaler.pkl'
+    with open(scaler_path, 'rb') as f:
+        scaler = pickle.load(f)
+
+    # Features
+    feature_cols = model_wrapper.features
+
+    # DataFrame prep
+    df_copy = df.copy()
+    df_copy[feature_cols] = scaler.transform(df_copy[feature_cols])
+
+    # Create sequences
+    X, y, info_arr = create_sequences(df_copy, group_cols, feature_cols, target_col, sequence_len, info_cols)
+
+    info = pd.DataFrame(data=info_arr, columns=info_cols)
+    info['surf'] = info['surf'].astype(np.uint8)
+    info['surf'] = label_encoder.inverse_transform(info['surf'])
+
+    # Create loader
+    eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
+
+    # Run tests
+    model = model_wrapper.model
+    predictions = np.array([], dtype=np.uint8)
+    model.eval()
+    with torch.no_grad():
+        for sequences, labels in eval_loader:
+            sequences = sequences.to(device, non_blocking=True)
+            outputs = model(sequences)
+            _, predicted = torch.max(outputs.data, 1)
+
+            predictions = np.hstack([predictions, predicted.cpu().numpy()])
+
+    info['predictions'] = label_encoder.inverse_transform(predictions)
+
+    # Unscale certain columns if needed
+    if model_name in exps_to_unscale:
+        for _col in unscale_cols:
+            dummy_data[:, feature_cols.index(_col)] = info[_col]
+        dummy_data = scaler.inverse_transform(dummy_data)
+        for _col in unscale_cols:
+            info[_col] = dummy_data[:, feature_cols.index(_col)]
+
+    return info
+
+
 def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -192,55 +260,22 @@ def main():
     exps_to_unscale = [f'{n}_kalman_type_4' for n in nets]
 
     raw_results: dict[str, pd.DataFrame] = {}
+
     for model_name, model_wrapper in models.items():
-        print(f'Running {model_name}')
-
-        # Scaler
-        ckpt_path = Path('data/runs') / model_name
-        scaler_path = ckpt_path / 'scaler.pkl'
-        with open(scaler_path, 'rb') as f:
-            scaler = pickle.load(f)
-
-        # Features
-        feature_cols = model_wrapper.features
-
-        # DataFrame prep
-        df_copy = df.copy()
-        df_copy[feature_cols] = scaler.transform(df_copy[feature_cols])
-
-        X, y, info = create_sequences(df_copy, group_cols, feature_cols, target_col, sequence_len, info_cols)
-        info = pd.DataFrame(data=info, columns=info_cols)
-        info['surf'] = info['surf'].astype(np.uint8)
-        info['surf'] = label_encoder.inverse_transform(info['surf'])
-
-        # Create loader
-        eval_dataset = SequentialTabularDataset(X, y, device=device)
-        eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
-
-        # Run tests
-        model = model_wrapper.model
-        predictions = np.array([], dtype=np.uint8)
-        model.eval()
-        with torch.no_grad():
-            for sequences, labels in eval_loader:
-                sequences = sequences.to(device, non_blocking=True)
-                labels = labels.to(device, non_blocking=True)
-                outputs = model(sequences)
-                _, predicted = torch.max(outputs.data, 1)
-
-                predictions = np.hstack([predictions, predicted.cpu().numpy()])
-
-        info['predictions'] = label_encoder.inverse_transform(predictions)
-
-        # Unscale certain columns if needed
-        if model_name in exps_to_unscale:
-            dummy_data = np.zeros((len(info[unscale_cols]), 3))
-            for _col in unscale_cols:
-                dummy_data[:, feature_cols.index(_col)] = info[_col]
-            dummy_data = scaler.inverse_transform(dummy_data)
-            for _col in unscale_cols:
-                info[_col] = dummy_data[:, feature_cols.index(_col)]
-
+        info = run_inference(
+            model_name=model_name,
+            model_wrapper=model_wrapper,
+            df=df,
+            group_cols=group_cols,
+            target_col=target_col,
+            sequence_len=sequence_len,
+            info_cols=info_cols,
+            label_encoder=label_encoder,
+            device=device,
+            batch_size=batch_size,
+            exps_to_unscale=exps_to_unscale,
+            unscale_cols=unscale_cols
+        )
         raw_results[model_name] = info
 
     # Create accuracy summaries
@@ -383,56 +418,21 @@ def main():
         # Encode label
         _df[target_col] = label_encoder.transform(_df[target_col])
 
-        # TODO: Refactor it to outside funciton. Because linear dataset processing uses highly similar workflow
         for model_name, model_wrapper in models.items():
-            print(f'Running {model_name}')
-
-            # Scaler
-            ckpt_path = Path('data/runs') / model_name
-            scaler_path = ckpt_path / 'scaler.pkl'
-            with open(scaler_path, 'rb') as f:
-                scaler = pickle.load(f)
-
-            # Features
-            feature_cols = model_wrapper.features
-
-            # Scale features
-            df_copy = _df.copy()
-            df_copy[feature_cols] = scaler.transform(df_copy[feature_cols])
-
-            # Create the sequence
-            X, y, info = create_sequences(df_copy, 'group', feature_cols, target_col, sequence_len,
-                                          info_cols)
-
-            info = pd.DataFrame(data=info, columns=info_cols)
-            info['surf'] = info['surf'].astype(np.uint8)
-            info['surf'] = label_encoder.inverse_transform(info['surf'])
-
-            # Create DataLoader
-            eval_dataset = SequentialTabularDataset(X, y, device=device)
-            eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
-
-            # Run tests
-            model = model_wrapper.model
-            predictions = np.array([], dtype=np.uint8)
-            model.eval()
-            with torch.no_grad():
-                for sequences, labels in eval_loader:
-                    outputs = model(sequences)
-                    _, predicted = torch.max(outputs.data, 1)
-
-                    predictions = np.hstack([predictions, predicted.cpu().numpy()])
-
-            info['predictions'] = label_encoder.inverse_transform(predictions)
-
-            # Unscale certain columns if needed
-            if model_name in exps_to_unscale:
-                dummy_data = np.zeros((len(info[unscale_cols]), 3))
-                for _col in unscale_cols:
-                    dummy_data[:, feature_cols.index(_col)] = info[_col]
-                dummy_data = scaler.inverse_transform(dummy_data)
-                for _col in unscale_cols:
-                    info[_col] = dummy_data[:, feature_cols.index(_col)]
+            info = run_inference(
+                model_name=model_name,
+                model_wrapper=model_wrapper,
+                df=_df,
+                group_cols='group',
+                target_col=target_col,
+                sequence_len=sequence_len,
+                info_cols=info_cols,
+                label_encoder=label_encoder,
+                device=device,
+                batch_size=batch_size,
+                exps_to_unscale=exps_to_unscale,
+                unscale_cols=unscale_cols
+            )
 
             raw_names.append(model_name)
             raw_ds_types.append(df_name)
