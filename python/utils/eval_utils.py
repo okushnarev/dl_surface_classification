@@ -1,5 +1,6 @@
 import pickle
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -122,3 +123,13 @@ def run_inference(
             info[_col] = dummy_data[:, feature_cols.index(_col)]
 
     return info
+
+
+def compose_metadata(model: torch.nn.Module, model_name: str, columns: list[str]) -> dict:
+    return dict(
+        model_name=model_name,
+        hash=get_model_hash(model),
+        columns=columns,
+        timestamp=datetime.now().isoformat(),
+    )
+
