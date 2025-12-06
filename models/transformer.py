@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 
-from models.cnn import CNNLayerConfig, MLPLayerConfig
-from models.cnn import MLPLayerConfig
+from python.utils.net_utils import MLPLayerConfig, build_mlp_from_config
 
 
 def build_mlp(initial_dim: int, layers: list[int], output_dim: int, dropout: float = 0.2) -> nn.Module:
