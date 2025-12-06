@@ -7,8 +7,7 @@ class TabularRNN(nn.Module):
                  mlp_hidden_dims,  # TODO: update to MLPLayerConfig
                  embedding_dim,
                  rnn_hidden_dim,
-                 num_classes,
-                 device='cpu'):
+                 num_classes):
         super().__init__()
         self.embedding_dim = embedding_dim
 
@@ -35,7 +34,6 @@ class TabularRNN(nn.Module):
 
         # Classifier Head
         self.classifier = nn.Linear(rnn_hidden_dim, num_classes)
-        self.to(device)
 
     def forward(self, x):
         x = self.mlp_encoder(x)

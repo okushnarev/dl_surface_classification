@@ -12,14 +12,12 @@ class Transformer(nn.Module):
                  num_heads: int,
                  num_transformer_layers: int,
                  classification_layers: list[MLPLayerConfig],
-                 num_classes: int,
-                 device: str = 'cpu'):
+                 num_classes: int):
         super().__init__()
 
         self.input_dim = input_dim
         self.embedding_dim = embedding_dim
         self.num_classes = num_classes
-        self.device = device
 
         # Encoder
         self.encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
@@ -42,7 +40,6 @@ class Transformer(nn.Module):
         # Classification head
         self.classifier = build_mlp_from_config(classification_layers, embedding_dim, num_classes)
 
-        self.to(self.device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
