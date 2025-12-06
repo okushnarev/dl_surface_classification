@@ -109,7 +109,7 @@ def main():
                     prep_cfg = prep_cnn_cfg
                     prep_model = CNNTrainWrapper
 
-                case 'transfromer':
+                case 'transformer':
                     from python.transformer.train_transformer import prep_transformer_cfg
                     from models.transformer import Transformer
 
