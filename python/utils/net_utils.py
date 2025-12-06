@@ -41,3 +41,21 @@ def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_ste
         current_channels = config.out_channels
 
     return nn.Sequential(*cnn_layers), current_channels, current_num_steps
+
+def build_mlp_from_config(configs: list[MLPLayerConfig], input_dim: int, output_dim: int) -> nn.Module:
+    structure = []
+    current_dim = input_dim
+
+    for i, config in enumerate(configs):
+        structure.append(nn.Linear(current_dim, config.out_dim))
+        structure.append(nn.ReLU())
+
+        if config.dropout > 0:
+            structure.append(nn.Dropout(p=config.dropout))
+
+        # Update the feature count for the next layer
+        current_dim = config.out_dim
+
+    structure.append(nn.Linear(current_dim, output_dim))
+
+    return nn.Sequential(*structure)

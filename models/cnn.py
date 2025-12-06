@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from python.utils.net_utils import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config
+from python.utils.net_utils import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config, build_mlp_from_config
 
 
 class CNN(nn.Module):
@@ -38,27 +38,11 @@ class CNN(nn.Module):
             )
 
         flattened_size = current_channels * current_num_steps
-
-        mlp_layers = []
-        current_in_features = flattened_size
-
-        for i, config in enumerate(mlp_configs):
-            mlp_layers.append(nn.Linear(current_in_features, config.out_dim))
-            mlp_layers.append(nn.ReLU())
-
-            if config.dropout > 0:
-                mlp_layers.append(nn.Dropout(p=config.dropout))
-
-            # Update the feature count for the next layer
-            current_in_features = config.out_dim
-
-        # Add the final output layer
-        mlp_layers.append(nn.Linear(current_in_features, num_classes))
-
-        # The classifier starts with a Flatten layer
-        self.classifier = nn.Sequential(nn.Flatten(), *mlp_layers)
+        self.flatten = nn.Flatten()
+        self.classifier = build_mlp_from_config(mlp_configs, flattened_size, num_classes)
 
     def forward(self, x):
         features = self.cnn_feature_extractor(x)
-        output = self.classifier(features)
+        flat_features = self.flatten(features)
+        output = self.classifier(flat_features)
         return output
