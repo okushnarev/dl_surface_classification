@@ -43,7 +43,8 @@ if __name__ == '__main__':
             if key == 'name':
                 command.extend([f'--exp_name', str(value)])
 
-                param_file_name = '_'.join(['best', 'params'] + value.split('_')[1:])
+                suffix = value.replace(nn_name, '').strip('_')
+                param_file_name = f'best_params_{suffix}'
                 if (p := Path(f'data/params/{nn_name}_optim/{param_file_name}.json')).exists():
                     command.extend([f'--config', str(p)])
             elif key in ('train', 'common'):
