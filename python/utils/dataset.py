@@ -1,24 +1,5 @@
 import numpy as np
-import torch
 import pandas as pd
-
-from torch.utils.data import Dataset
-
-
-class SequentialTabularDataset(Dataset):
-    """Custom Dataset for sequences of tabular data."""
-
-    def __init__(self, features, labels):
-        self.features = features
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.features)
-
-    def __getitem__(self, idx):
-        # Return a sequence and its corresponding single label
-        return torch.tensor(self.features[idx], dtype=torch.float32), \
-            torch.tensor(self.labels[idx], dtype=torch.long)
 
 
 def create_sequences(

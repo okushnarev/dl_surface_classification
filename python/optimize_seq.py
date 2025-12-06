@@ -7,8 +7,9 @@ import optuna
 import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from torch.utils.data import TensorDataset
 
-from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.dataset import create_sequences
 
 
 def parse_args():
@@ -60,7 +61,9 @@ def optimize(objective, params_path):
     print(f'Created {len(X_val)} validation sequences.')
 
     # Create DataLoaders
-    val_dataset = SequentialTabularDataset(X_val, y_val, device=device)
+    X_val = torch.tensor(X_val, dtype=torch.float32)
+    y_val = torch.tensor(y_val, dtype=torch.long)
+    val_dataset = TensorDataset(X_val, y_val)
 
     input_dim = len(feature_cols)
 

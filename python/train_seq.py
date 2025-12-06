@@ -10,9 +10,9 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
-from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.dataset import create_sequences
 from python.utils.save_load import load_checkpoint, save_checkpoint
 
 
@@ -81,8 +81,13 @@ def train(model_constructor, prep_cfg_func):
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
     # Create DataLoaders
-    train_dataset = SequentialTabularDataset(X_train, y_train)
-    test_dataset = SequentialTabularDataset(X_test, y_test)
+    X_train = torch.tensor(X_train, dtype=torch.float32)
+    y_train = torch.tensor(y_train, dtype=torch.long)
+    train_dataset = TensorDataset(X_train, y_train)
+
+    X_test = torch.tensor(X_test, dtype=torch.float32)
+    y_test = torch.tensor(y_test, dtype=torch.long)
+    test_dataset = TensorDataset(X_test, y_test)
 
     train_loader = DataLoader(
         train_dataset,
@@ -174,4 +179,3 @@ def train(model_constructor, prep_cfg_func):
             correct += (predicted == labels).sum().item()
     print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
     save_checkpoint(model, optimizer, num_epochs, loss, ckpt_path / 'last.pt')
-

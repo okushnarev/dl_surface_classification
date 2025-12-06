@@ -12,10 +12,10 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch import nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, TensorDataset
 
 from models.rnn import TabularRNN
-from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.dataset import create_sequences
 
 
 def parse_args():
@@ -74,7 +74,6 @@ def objective(trial, full_train_dataset, input_dim, num_classes, batch_size, cv_
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-
 
             # Validation and Pruning
             model.eval()
@@ -143,8 +142,9 @@ def main():
     print(f'Created {len(X_val)} validation sequences.')
 
     # Create DataLoaders
-    val_dataset = SequentialTabularDataset(X_val, y_val, device=device)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    X_val = torch.tensor(X_val, dtype=torch.float32)
+    y_val = torch.tensor(y_val, dtype=torch.long)
+    val_dataset = TensorDataset(X_val, y_val)
 
     input_dim = len(feature_cols)
     study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
@@ -188,6 +188,7 @@ def main():
     }
     with open(params_path / f'best_params_cv.json', 'w') as f:
         json.dump(res, f, indent=2)
+
 
 if __name__ == '__main__':
     main()

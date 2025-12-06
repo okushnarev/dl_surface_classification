@@ -5,12 +5,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 import torch
 from sklearn.preprocessing import LabelEncoder
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
-from python.utils.dataset import SequentialTabularDataset, create_sequences
+from python.utils.dataset import create_sequences
 from python.utils.model_hash import get_model_hash
 from python.utils.save_load import read_csv_and_metadata
 
@@ -96,7 +95,10 @@ def run_inference(
     info['surf'] = label_encoder.inverse_transform(info['surf'])
 
     # Create loader
-    eval_dataset = SequentialTabularDataset(X, y)
+    X = torch.tensor(X, dtype=torch.float32)
+    y = torch.tensor(y, dtype=torch.long)
+    eval_dataset = TensorDataset(X, y)
+
     eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
 
     # Run tests
