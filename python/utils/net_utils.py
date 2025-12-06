@@ -11,6 +11,12 @@ class CNNLayerConfig(BaseModel):
     pool_size: int = 2
 
 
+class MLPLayerConfig(BaseModel):
+    """Configuration for a single MLP block."""
+    out_dim: int
+    dropout: float = 0.0
+
+
 def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_steps: int) -> tuple[nn.Module, int, int]:
     cnn_layers = []
     current_channels = input_dim

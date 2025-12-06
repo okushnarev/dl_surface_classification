@@ -1,10 +1,7 @@
 from typing import List
 import torch.nn as nn
 
-class MLPLayerConfig(BaseModel):
-    """Configuration for a single MLP block."""
-    out_dim: int
-    dropout: float = 0.0
+from python.utils.net_utils import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config
 
 
 class CNN(nn.Module):
