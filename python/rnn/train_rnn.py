@@ -1,11 +1,12 @@
 import json
+from pathlib import Path
 
 from models.rnn import TabularRNN
 from python.train_seq import train
 
 
-def prep_rnn_cfg(cfg_path, input_dim, num_classes, sequence_length=None):
-    if cfg_path is not None:
+def prep_rnn_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
+    if cfg_path is not None and cfg_path.exists():
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
