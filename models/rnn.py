@@ -1,12 +1,12 @@
 import torch.nn as nn
 
-from python.utils.net_utils import MLPLayerConfig
+from python.utils.net_utils import MLPLayerConfig, build_mlp_from_config
 
 
 class TabularRNN(nn.Module):
     def __init__(self,
                  input_dim: int,
-                 mlp_hidden_dims: list[MLPLayerConfig],
+                 encoder_layers: list[MLPLayerConfig],
                  embedding_dim: int,
                  rnn_hidden_dim: int,
                  num_classes: int
@@ -15,17 +15,7 @@ class TabularRNN(nn.Module):
         self.embedding_dim = embedding_dim
 
         # MLP Encoder Block
-        mlp_layers = []
-        current_features = input_dim
-        for hidden_dim in mlp_hidden_dims:
-            mlp_layers += [
-                nn.Linear(current_features, hidden_dim),
-                nn.ReLU(),
-                nn.LayerNorm(hidden_dim),
-            ]
-            current_features = hidden_dim
-        mlp_layers.append(nn.Linear(current_features, self.embedding_dim))
-        self.mlp_encoder = nn.Sequential(*mlp_layers)
+        self.mlp_encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
 
         # RNN Block
         self.rnn = nn.GRU(
