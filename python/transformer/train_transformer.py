@@ -2,13 +2,8 @@ import json
 
 from models.transformer import Transformer
 from python.train_seq import train
+from python.utils.net_utils import MLPLayerConfig
 
-def load_mlp_layers(config, name):
-    layers = []
-    for idx in range(config[f'{name}_n_layers']):
-        layers.append(config[f'{name}_dim_{idx}'])
-
-    return layers
 
 def prep_transformer_cfg(cfg_path, input_dim, num_classes, sequence_length=None):
     if cfg_path is not None:
@@ -19,16 +14,30 @@ def prep_transformer_cfg(cfg_path, input_dim, num_classes, sequence_length=None)
         num_heads = config['num_heads']
         num_transformer_layers = config['num_transformer_layers']
 
-        encoder_layers = load_mlp_layers(config, 'encoder')
-        classification_layers = load_mlp_layers(config, 'classification')
+        encoder_layers = [
+            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=0.2)
+            for idx in range(config['encoder_n_layers'])
+        ]
+
+        classification_layers = [
+            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=0.2)
+            for idx in range(config['classification_n_layers'])
+        ]
 
         start_lr = config['lr']
     else:
-        encoder_layers = [16, 32]
         embedding_dim = 32
         num_heads = 1
         num_transformer_layers = 1
-        classification_layers = [32]
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=16, dropout=0.2),
+            MLPLayerConfig(out_dim=32, dropout=0.2),
+        ]
+
+        classification_layers = [
+            MLPLayerConfig(out_dim=32, dropout=0.2),
+        ]
 
         start_lr = 1e-2
 
