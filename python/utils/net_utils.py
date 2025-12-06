@@ -18,7 +18,7 @@ class MLPLayerConfig(BaseModel):
 
 
 def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_steps: int) -> tuple[nn.Module, int, int]:
-    cnn_layers = []
+    structure = []
     current_channels = input_dim
     current_num_steps = num_steps
 
@@ -29,18 +29,18 @@ def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_ste
             kernel_size=config.kernel_size,
             padding=config.padding
         )
-        cnn_layers.append(conv_layer)
-        cnn_layers.append(nn.ReLU())
+        structure.append(conv_layer)
+        structure.append(nn.ReLU())
 
         if config.use_pooling:
-            cnn_layers.append(nn.MaxPool1d(kernel_size=config.pool_size))
+            structure.append(nn.MaxPool1d(kernel_size=config.pool_size))
             # Update the sequence length tracker
             current_num_steps //= config.pool_size
 
         # Update the channel count for the next layer
         current_channels = config.out_channels
 
-    return nn.Sequential(*cnn_layers), current_channels, current_num_steps
+    return nn.Sequential(*structure), current_channels, current_num_steps
 
 def build_mlp_from_config(configs: list[MLPLayerConfig], input_dim: int, output_dim: int) -> nn.Module:
     structure = []
