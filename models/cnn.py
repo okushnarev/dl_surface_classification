@@ -1,16 +1,5 @@
 from typing import List
-from pydantic import BaseModel
 import torch.nn as nn
-
-
-class CNNLayerConfig(BaseModel):
-    """Configuration for a single 1D Convolutional block."""
-    out_channels: int
-    kernel_size: int
-    padding: str = 'same'
-    use_pooling: bool = True
-    pool_size: int = 2
-
 
 class MLPLayerConfig(BaseModel):
     """Configuration for a single MLP block."""
@@ -41,29 +30,9 @@ class CNN(nn.Module):
             raise ValueError("cnn_configs list cannot be empty.")
 
         # CNN part
-        cnn_layers = []
-        current_channels = input_dim
-        current_num_steps = num_steps
-
-        for i, config in enumerate(cnn_configs):
-            conv_layer = nn.Conv1d(
-                in_channels=current_channels,
-                out_channels=config.out_channels,
-                kernel_size=config.kernel_size,
-                padding=config.padding
-            )
-            cnn_layers.append(conv_layer)
-            cnn_layers.append(nn.ReLU())
-
-            if config.use_pooling:
-                cnn_layers.append(nn.MaxPool1d(kernel_size=config.pool_size))
-                # Update the sequence length tracker
-                current_num_steps //= config.pool_size
-
-            # Update the channel count for the next layer
-            current_channels = config.out_channels
-
-        self.cnn_feature_extractor = nn.Sequential(*cnn_layers)
+        (self.cnn_feature_extractor,
+         current_channels,
+         current_num_steps) = build_cnn_from_config(cnn_configs, input_dim, num_steps)
 
         # MLP part
         if current_num_steps == 0:
