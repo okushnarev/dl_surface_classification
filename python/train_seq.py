@@ -100,7 +100,8 @@ def train(model_constructor, prep_cfg_func):
 
     # Model
     input_dim = len(feature_cols)
-    cfg = prep_cfg_func(args.config, input_dim, num_classes, sequence_length)
+    cfg_path = Path(args.config) if args.config is not None else None
+    cfg = prep_cfg_func(cfg_path, input_dim, num_classes, sequence_length)
     model = model_constructor(**cfg['model']).to(device)
 
     # Training
