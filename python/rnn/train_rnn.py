@@ -3,6 +3,7 @@ from pathlib import Path
 
 from models.rnn import TabularRNN
 from python.train_seq import train
+from python.utils.net_utils import MLPLayerConfig
 
 
 def prep_rnn_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
@@ -12,21 +13,26 @@ def prep_rnn_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_leng
 
         embedding_dim = config['embedding_dim']
         rnn_hidden_dim = config['rnn_hidden_dim']
-        mlp_hidden_dims = []
-        for idx in range(config['mlp_n_layers']):
-            mlp_hidden_dims.append(config[f'mlp_dim_{idx}'])
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=0.2)
+            for idx in range(config['mlp_n_layers'])
+        ]
 
         start_lr = config['lr']
     else:
         embedding_dim = 32
-        mlp_hidden_dims = [64, 16]
+        encoder_layers = [
+            MLPLayerConfig(out_dim=64, dropout=0.2),
+            MLPLayerConfig(out_dim=16, dropout=0.2),
+        ]
         rnn_hidden_dim = 64
         start_lr = 1e-2
 
     cfg = dict(
         model=dict(
             input_dim=input_dim,
-            mlp_hidden_dims=mlp_hidden_dims,
+            encoder_layers=encoder_layers,
             embedding_dim=embedding_dim,
             rnn_hidden_dim=rnn_hidden_dim,
             num_classes=num_classes,
