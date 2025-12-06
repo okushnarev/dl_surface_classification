@@ -39,31 +39,12 @@ class TabularRNN(nn.Module):
         self.to(device)
 
     def forward(self, x):
-        # Input x shape: (batch_size, seq_len, input_dim)
-        batch_size, seq_len, _ = x.shape
+        x = self.mlp_encoder(x)
+        _, hidden = self.rnn(x)
 
-        # Reshape for MLP: Apply MLP to each time step in the sequence
-        # (batch_size, seq_len, input_dim) -> (batch_size * seq_len, input_dim)
-        x_reshaped = x.view(batch_size * seq_len, -1)
-
-        embedding_reshaped = self.mlp_encoder(x_reshaped)
-
-        # Reshape back for RNN
-        # (batch_size * seq_len, embedding_dim) -> (batch_size, seq_len, embedding_dim)
-        rnn_input = embedding_reshaped.view(batch_size, seq_len, self.embedding_dim)
-
-        # Pass the sequence of embeddings through the GRU
-        # PyTorch automatically handles the hidden state initialization.
-        # rnn_output shape: (batch_size, seq_len, rnn_hidden_dim)
-        # hidden shape: (num_layers, batch_size, rnn_hidden_dim)
-        _, hidden = self.rnn(rnn_input)
-
-        # Get the last hidden state
-        # We squeeze out the num_layers dimension (as it's 1)
-        # Shape becomes: (batch_size, rnn_hidden_dim)
+        # Squeeze to achieve shape of: (batch_size, rnn_hidden_dim). Since num_layers is 1
         last_hidden_state = hidden.squeeze(0)
 
-        # Pass through the final classifier
         logits = self.classifier(last_hidden_state)
 
         return logits
