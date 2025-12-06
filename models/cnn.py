@@ -1,4 +1,3 @@
-from typing import List
 import torch.nn as nn
 
 from python.utils.net_utils import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config
@@ -8,8 +7,8 @@ class CNN(nn.Module):
     def __init__(self,
                  input_dim: int,
                  num_steps: int,
-                 cnn_configs: List[CNNLayerConfig],
-                 mlp_configs: List[MLPLayerConfig],
+                 cnn_configs: list[CNNLayerConfig],
+                 mlp_configs: list[MLPLayerConfig],
                  num_classes: int):
         """
         A flexible 1D CNN framework built from configuration lists.
@@ -17,8 +16,8 @@ class CNN(nn.Module):
         Args:
             input_dim (int): Number of input features/channels.
             num_steps (int): Length of the input sequence.
-            cnn_configs (List[CNNLayerConfig]): List of configs for CNN blocks.
-            mlp_configs (List[MLPLayerConfig]): List of configs for MLP blocks.
+            cnn_configs (list[CNNLayerConfig]): List of configs for CNN blocks.
+            mlp_configs (list[MLPLayerConfig]): List of configs for MLP blocks.
             num_classes (int): Number of classes for the final output.
         """
         super().__init__()
