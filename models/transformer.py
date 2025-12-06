@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from models.cnn import CNNLayerConfig, MLPLayerConfig
+
 
 def build_mlp(initial_dim: int, layers: list[int], output_dim: int, dropout: float = 0.2) -> nn.Module:
     current_dim = initial_dim
@@ -18,11 +20,11 @@ def build_mlp(initial_dim: int, layers: list[int], output_dim: int, dropout: flo
 class Transformer(nn.Module):
     def __init__(self,
                  input_dim: int,
-                 encoder_layers: list[int],  # TODO: Update to MLPLayerConfig
+                 encoder_layers: list[MLPLayerConfig],
                  embedding_dim: int,
                  num_heads: int,
                  num_transformer_layers: int,
-                 classification_layers: list[int],  # TODO: Update to MLPLayerConfig
+                 classification_layers: list[CNNLayerConfig],
                  num_classes: int,
                  device: str = 'cpu'):
         super().__init__()
