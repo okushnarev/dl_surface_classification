@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from models.cnn import CNNLayerConfig, MLPLayerConfig
+from models.cnn import MLPLayerConfig
 
 
 def build_mlp(initial_dim: int, layers: list[int], output_dim: int, dropout: float = 0.2) -> nn.Module:
@@ -24,7 +25,7 @@ class Transformer(nn.Module):
                  embedding_dim: int,
                  num_heads: int,
                  num_transformer_layers: int,
-                 classification_layers: list[CNNLayerConfig],
+                 classification_layers: list[MLPLayerConfig],
                  num_classes: int,
                  device: str = 'cpu'):
         super().__init__()
