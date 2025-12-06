@@ -5,6 +5,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: kalman
     ds_type: type_1
 
@@ -15,6 +16,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: kalman
     ds_type: type_2
 
@@ -25,6 +27,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: kalman
     ds_type: type_3
 
@@ -35,6 +38,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: no_filter
     ds_type: type_1
 
@@ -45,6 +49,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: no_filter
     ds_type: type_2
 
@@ -55,6 +60,7 @@
   train:
     epochs: 150
   common:
+    use_cuda: None
     filter: no_filter
     ds_type: type_3
 
@@ -63,7 +69,8 @@
   optimization:
     epochs: 15
   train:
-    epochs: 200
+    epochs: 150
   common:
+    use_cuda: None
     filter: kalman
     ds_type: type_4

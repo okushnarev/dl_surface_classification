@@ -69,7 +69,7 @@
   optimization:
     epochs: 15
   train:
-    epochs: 200
+    epochs: 150
   common:
     use_cuda: None
     filter: kalman
