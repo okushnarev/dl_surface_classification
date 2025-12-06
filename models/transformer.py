@@ -4,19 +4,6 @@ import torch.nn as nn
 from python.utils.net_utils import MLPLayerConfig, build_mlp_from_config
 
 
-def build_mlp(initial_dim: int, layers: list[int], output_dim: int, dropout: float = 0.2) -> nn.Module:
-    current_dim = initial_dim
-    structure = []
-    for layer in layers:
-        structure.append(nn.Linear(current_dim, layer))
-        structure.append(nn.ReLU())
-        structure.append(nn.Dropout(dropout))
-        current_dim = layer
-
-    structure.append(nn.Linear(current_dim, output_dim))
-    return nn.Sequential(*structure)
-
-
 class Transformer(nn.Module):
     def __init__(self,
                  input_dim: int,
@@ -35,7 +22,7 @@ class Transformer(nn.Module):
         self.device = device
 
         # Encoder
-        self.encoder = build_mlp(input_dim, encoder_layers, embedding_dim, dropout=0.2)
+        self.encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
 
         # CLS token
         self.cls_token = nn.Parameter(torch.randn(1, 1, embedding_dim))
@@ -53,7 +40,7 @@ class Transformer(nn.Module):
         )
 
         # Classification head
-        self.classifier = build_mlp(embedding_dim, classification_layers, num_classes, dropout=0.2)
+        self.classifier = build_mlp_from_config(classification_layers, embedding_dim, num_classes)
 
         self.to(self.device)
 
