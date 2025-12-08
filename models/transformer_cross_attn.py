@@ -7,8 +7,11 @@ from python.utils.net_utils import build_mlp_from_config
 
 
 class TransformerCrossAttn(nn.Module):
-    def __init__(self, config: TransformerCrossAttnConfig):
+    def __init__(self, config: TransformerCrossAttnConfig | None = None, **kwargs):
         super().__init__()
+
+        if config is None:
+            config = TransformerCrossAttnConfig(**kwargs)
 
         self.input_dim = config.input_dim
         self.embedding_dim = config.embedding_dim
