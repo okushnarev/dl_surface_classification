@@ -87,6 +87,9 @@ def transformer_cross_attn_objective(trial, val_dataset, input_dim, num_steps, n
         correct, total = 0, 0
         epoch_loss = 0
         for sequences, labels in val_loader:
+            sequences = sequences.to(device)
+            labels = labels.to(device)
+
             outputs = model(sequences)
             loss = criterion(outputs, labels)
             epoch_loss += loss.item()

@@ -38,7 +38,9 @@ def rnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_s
         correct, total = 0, 0
         epoch_loss = 0
         for sequences, labels in val_loader:
-            # Data is already on the correct device from our custom Dataset
+            sequences = sequences.to(device)
+            labels = labels.to(device)
+
             outputs = model(sequences)
             loss = criterion(outputs, labels)
             epoch_loss += loss.item()
