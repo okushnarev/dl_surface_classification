@@ -20,7 +20,7 @@ def transformer_cross_attn_objective(trial, val_dataset, input_dim, num_steps, n
 
     # Suggest Hyperparameters
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
+    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=4, high=8)
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
