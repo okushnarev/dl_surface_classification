@@ -1,14 +1,10 @@
 from pathlib import Path
 
-import optuna
-import torch
-from torch import nn
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
 from models.rnn import TabularRNN
 from python.optimize_seq import optimize
+from python.utils.optimization_utils import run_training_loop
 
 
 def rnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):
@@ -53,13 +49,14 @@ def rnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_s
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-        scheduler.step(epoch)
-
-        accuracy = correct / total
-        trial.report(accuracy, epoch)
-
-        if trial.should_prune():
-            raise optuna.TrialPruned()
+    accuracy = run_training_loop(
+        trial,
+        model,
+        val_loader,
+        epochs,
+        lr,
+        device
+    )
 
     return accuracy
 

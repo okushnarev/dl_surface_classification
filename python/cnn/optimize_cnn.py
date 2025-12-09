@@ -1,15 +1,11 @@
 from pathlib import Path
 
-import optuna
-import torch
-from torch import nn
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
 from models.cnn import CNNLayerConfig, MLPLayerConfig
 from python.cnn.train_cnn import CNNTrainWrapper
 from python.optimize_seq import optimize
+from python.utils.optimization_utils import run_training_loop
 
 
 def cnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):
@@ -41,38 +37,15 @@ def cnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_s
         mlp_configs=mlp_configs,
         num_classes=num_classes
     ).to(device)
-    optimizer = AdamW(model.parameters(), lr=lr)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
-    criterion = nn.CrossEntropyLoss()
 
-    accuracy = 0
-    for epoch in range(epochs):
-        model.train()
-        correct, total = 0, 0
-        epoch_loss = 0
-        for sequences, labels in val_loader:
-            sequences = sequences.to(device)
-            labels = labels.to(device)
-
-            outputs = model(sequences)
-            loss = criterion(outputs, labels)
-            epoch_loss += loss.item()
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-        scheduler.step(epoch)
-
-        accuracy = correct / total
-        trial.report(accuracy, epoch)
-
-        if trial.should_prune():
-            raise optuna.TrialPruned()
+    accuracy = run_training_loop(
+        trial,
+        model,
+        val_loader,
+        epochs,
+        lr,
+        device
+    )
 
     return accuracy
 
