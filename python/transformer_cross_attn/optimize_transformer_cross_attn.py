@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 
 from models.cnn import MLPLayerConfig
 from models.configs.transformer_cross_attn_config import TransformerCrossAttnConfig
-from models.transformer import Transformer
 from models.transformer_cross_attn import TransformerCrossAttn
 from python.optimize_seq import optimize
 
