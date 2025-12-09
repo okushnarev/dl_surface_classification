@@ -12,7 +12,7 @@ def prep_transformer_cfg(cfg_path: Path, input_dim: int, num_classes: int, seque
             config = json.load(f)['params']
 
         embedding_dim = config['embedding_dim']
-        num_heads = config['num_heads']
+        num_transformer_heads = config['num_transformer_heads']
         num_transformer_layers = config['num_transformer_layers']
 
         encoder_layers = [
@@ -28,7 +28,7 @@ def prep_transformer_cfg(cfg_path: Path, input_dim: int, num_classes: int, seque
         start_lr = config['lr']
     else:
         embedding_dim = 32
-        num_heads = 1
+        num_transformer_heads = 1
         num_transformer_layers = 1
 
         encoder_layers = [
@@ -47,7 +47,7 @@ def prep_transformer_cfg(cfg_path: Path, input_dim: int, num_classes: int, seque
             input_dim=input_dim,
             encoder_layers=encoder_layers,
             embedding_dim=embedding_dim,
-            num_heads=num_heads,
+            num_transformer_heads=num_transformer_heads,
             num_transformer_layers=num_transformer_layers,
             classification_layers=classification_layers,
             num_classes=num_classes,

@@ -9,7 +9,7 @@ class Transformer(nn.Module):
                  input_dim: int,
                  encoder_layers: list[MLPLayerConfig],
                  embedding_dim: int,
-                 num_heads: int,
+                 num_transformer_heads: int,
                  num_transformer_layers: int,
                  classification_layers: list[MLPLayerConfig],
                  num_classes: int):
@@ -28,7 +28,7 @@ class Transformer(nn.Module):
         # Transformer
         transformer_layer = nn.TransformerEncoderLayer(
             d_model=embedding_dim,
-            nhead=num_heads,
+            nhead=num_transformer_heads,
             batch_first=True,
             dropout=0.2
         )
