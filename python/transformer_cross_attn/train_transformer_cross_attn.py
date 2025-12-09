@@ -6,7 +6,7 @@ from python.train_seq import train
 from python.utils.net_utils import MLPLayerConfig
 
 
-def prep_transformer_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
+def prep_transformer_cross_attn_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
     if cfg_path is not None and cfg_path.exists():
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
@@ -84,7 +84,7 @@ def prep_transformer_cfg(cfg_path: Path, input_dim: int, num_classes: int, seque
 
 
 def main():
-    train(TransformerCrossAttn, prep_transformer_cfg)
+    train(TransformerCrossAttn, prep_transformer_cross_attn_cfg)
 
 
 if __name__ == '__main__':
