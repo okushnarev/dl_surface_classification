@@ -123,6 +123,13 @@ def main():
                     prep_cfg = prep_transformer_cross_attn_cfg
                     prep_model = TransformerCrossAttn
 
+                case 'transformer_full_seq':
+                    from python.transformer_full_seq.train_transformer_full_seq import prep_transformer_full_seq_cfg
+                    from models.transformer_full_seq import TransformerFullSeq
+
+                    prep_cfg = prep_transformer_full_seq_cfg
+                    prep_model = TransformerFullSeq
+
                 case _:
                     raise ValueError(f'Unknown net {net}')
 
