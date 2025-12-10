@@ -70,7 +70,7 @@ def transformer_cross_attn_objective(trial, val_dataset, input_dim, num_steps, n
     model = TransformerCrossAttn(model_cfg).to(device)
 
     # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
 
     accuracy = run_training_loop(
         trial,

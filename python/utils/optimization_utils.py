@@ -29,8 +29,8 @@ def run_training_loop(
         epoch_loss = 0
 
         for sequences, labels in data_loader:
-            sequences = sequences.to(device)
-            labels = labels.to(device)
+            sequences = sequences.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
 
             # Forward pass
             outputs = model(sequences)

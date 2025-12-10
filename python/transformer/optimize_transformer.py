@@ -34,7 +34,7 @@ def transformer_objective(trial, val_dataset, input_dim, num_steps, num_classes,
     ]
 
     # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
 
     # Instantiate Model and Optimizer
     model = Transformer(

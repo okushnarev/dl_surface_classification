@@ -19,7 +19,7 @@ def cnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_s
     mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
     # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
 
     # Instantiate Model and Optimizer
     cnn_configs = [
