@@ -14,7 +14,7 @@ def mamba_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch
 
     # Suggest Hyperparameters
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
+    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=6, high=9)
 
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
     headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
