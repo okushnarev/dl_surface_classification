@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Tuple
+from torch.nn import Module
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ class Model:
     net_type: str  # e.g., RNN, CNN
     filter_type: str  # e.g., kalman, no_filter
     dataset: str  # e.g., type_1, type_2
-    model: torch.nn.Module = field(repr=False)
+    model: Module = field(repr=False)
     features: list[str] = field(repr=False)
 
     @property
@@ -131,7 +132,7 @@ def run_inference(
     return info
 
 
-def compose_metadata(model: torch.nn.Module, model_name: str, columns: list[str]) -> dict:
+def compose_metadata(model: Module, model_name: str, columns: list[str]) -> dict:
     return dict(
         model_name=model_name,
         hash=get_model_hash(model),
@@ -140,7 +141,7 @@ def compose_metadata(model: torch.nn.Module, model_name: str, columns: list[str]
     )
 
 
-def check_for_cache(path: Path, model: torch.nn.Module, columns: list[str]) -> tuple[bool, pd.DataFrame | None]:
+def check_for_cache(path: Path, model: Module, columns: list[str]) -> tuple[bool, pd.DataFrame | None]:
     use_chache = False
     info = None
     if path.exists():
