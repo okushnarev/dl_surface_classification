@@ -188,5 +188,10 @@ def get_model_components(net_type: str) -> Tuple[Callable, Any]:
             from models.transformer_full_seq import TransformerFullSeq
             return prep_transformer_full_seq_cfg, TransformerFullSeq
 
+        case 'mamba':
+            from python.mamba.train_mamba import prep_mamba_cfg
+            from models.mamba import MambaClassifier
+            return prep_mamba_cfg, MambaClassifier
+
         case _:
             raise ValueError(f'Unknown net {net_type}')
