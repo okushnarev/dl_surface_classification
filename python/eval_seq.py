@@ -11,7 +11,8 @@ from plotly.subplots import make_subplots
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 
-from python.utils.eval_utils import Model, check_for_cache, compose_metadata, run_inference, top_sorted_dict
+from python.utils.eval_utils import Model, check_for_cache, compose_metadata, get_model_components, run_inference, \
+    top_sorted_dict
 from python.utils.plot_utils import bar_plot, prep_name_plotly
 from python.utils.save_load import save_csv_and_metadata
 
