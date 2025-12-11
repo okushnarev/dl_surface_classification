@@ -2,6 +2,7 @@ import pickle
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable, Tuple
 
 import numpy as np
 import pandas as pd
@@ -152,3 +153,39 @@ def check_for_cache(path: Path, model: torch.nn.Module, columns: list[str]) -> t
             print(f'Lacking metadata at path: {path}')
 
     return use_chache, info
+
+
+def get_model_components(net_type: str) -> Tuple[Callable, Any]:
+    """
+    Returns the config preparation function and the Model class
+    based on the network type string.
+    """
+    match net_type:
+        case 'rnn':
+            from python.rnn.train_rnn import prep_rnn_cfg
+            from models.rnn import TabularRNN
+            return prep_rnn_cfg, TabularRNN
+
+        case 'cnn' | 'cnn_manual':
+            from python.cnn.train_cnn import prep_cnn_cfg
+            from python.cnn.train_cnn import CNNTrainWrapper
+            return prep_cnn_cfg, CNNTrainWrapper
+
+        case 'transformer':
+            from python.transformer.train_transformer import prep_transformer_cfg
+            from models.transformer import Transformer
+            return prep_transformer_cfg, Transformer
+
+        case 'transformer_cross_attn':
+            from python.transformer_cross_attn.train_transformer_cross_attn import \
+                prep_transformer_cross_attn_cfg
+            from models.transformer_cross_attn import TransformerCrossAttn
+            return prep_transformer_cross_attn_cfg, TransformerCrossAttn
+
+        case 'transformer_full_seq':
+            from python.transformer_full_seq.train_transformer_full_seq import prep_transformer_full_seq_cfg
+            from models.transformer_full_seq import TransformerFullSeq
+            return prep_transformer_full_seq_cfg, TransformerFullSeq
+
+        case _:
+            raise ValueError(f'Unknown net {net_type}')

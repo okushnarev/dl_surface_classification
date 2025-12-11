@@ -94,45 +94,7 @@ def main():
             # Hyperparams
             input_dim = len(features)
 
-            match net:
-                case 'rnn':
-                    from python.rnn.train_rnn import prep_rnn_cfg
-                    from models.rnn import TabularRNN
-
-                    prep_cfg = prep_rnn_cfg
-                    prep_model = TabularRNN
-
-                case 'cnn' | 'cnn_manual':
-                    from python.cnn.train_cnn import prep_cnn_cfg
-                    from python.cnn.train_cnn import CNNTrainWrapper
-
-                    prep_cfg = prep_cnn_cfg
-                    prep_model = CNNTrainWrapper
-
-                case 'transformer':
-                    from python.transformer.train_transformer import prep_transformer_cfg
-                    from models.transformer import Transformer
-
-                    prep_cfg = prep_transformer_cfg
-                    prep_model = Transformer
-
-                case 'transformer_cross_attn':
-                    from python.transformer_cross_attn.train_transformer_cross_attn import \
-                        prep_transformer_cross_attn_cfg
-                    from models.transformer_cross_attn import TransformerCrossAttn
-
-                    prep_cfg = prep_transformer_cross_attn_cfg
-                    prep_model = TransformerCrossAttn
-
-                case 'transformer_full_seq':
-                    from python.transformer_full_seq.train_transformer_full_seq import prep_transformer_full_seq_cfg
-                    from models.transformer_full_seq import TransformerFullSeq
-
-                    prep_cfg = prep_transformer_full_seq_cfg
-                    prep_model = TransformerFullSeq
-
-                case _:
-                    raise ValueError(f'Unknown net {net}')
+            prep_cfg, prep_model = get_model_components(net)
 
             cfg = prep_cfg(
                 cfg_path,
