@@ -149,9 +149,9 @@ def train(model_constructor, prep_cfg_func):
                     sequences = sequences.to(device, non_blocking=True)
                     labels = labels.to(device, non_blocking=True)
                     outputs = model(sequences)
-                    _, predicted = torch.max(outputs.data, 1)
+                    predicted = torch.argmax(outputs.data, 1)
 
-                    total += labels.size(0)
+                    total += len(labels)
                     correct += (predicted == labels).sum().item()
             test_acc = correct / total
             print(f'Accuracy on the test set: {100 * test_acc:.2f} %')

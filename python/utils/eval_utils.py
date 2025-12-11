@@ -109,7 +109,7 @@ def run_inference(
         for sequences, labels in eval_loader:
             sequences = sequences.to(device, non_blocking=True)
             outputs = model(sequences)
-            _, predicted = torch.max(outputs.data, 1)
+            predicted = torch.argmax(outputs.data, 1)
 
             predictions = np.hstack([predictions, predicted.cpu().numpy()])
 
