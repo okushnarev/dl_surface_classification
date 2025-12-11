@@ -17,15 +17,15 @@ class MambaClassifier(nn.Module):
         super().__init__()
 
         self.embedding_dim = embedding_dim
-        if isinstance(mamba_config, MambaConfig):
-            mamba_config = mamba_config.model_dump()
+        if isinstance(mamba_config, dict):
+            mamba_config = MambaConfig(**mamba_config)
 
         # MLP Encoder Block
         self.mlp_encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
 
         self.mamba = Mamba2(
             d_model=embedding_dim,
-            **mamba_config,
+            **mamba_config.model_dump(),
         )
 
         self.classifier = nn.Linear(embedding_dim, output_dim)
