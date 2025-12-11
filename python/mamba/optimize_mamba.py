@@ -56,7 +56,7 @@ def mamba_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch
 
 
 def main():
-    params_path = Path(f'data/params/transformer_optim')
+    params_path = Path(f'data/params/mamba')
     params_path.mkdir(parents=True, exist_ok=True)
     optimize(mamba_objective, params_path)
 
