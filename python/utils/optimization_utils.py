@@ -47,6 +47,7 @@ def run_training_loop(
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+        epoch_loss /= len(data_loader)
         scheduler.step(epoch_loss)
 
         accuracy = correct / total

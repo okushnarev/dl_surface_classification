@@ -135,10 +135,11 @@ def train(model_constructor, prep_cfg_func):
             loss.backward()
             optimizer.step()
 
+        epoch_loss /= len(train_loader)
         scheduler.step(epoch_loss)
 
         current_lr = optimizer.param_groups[0]['lr']
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.10f}, LR: {current_lr:.3e}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Epoch Loss: {epoch_loss:.10f}, LR: {current_lr:.3e}')
 
         # Test every N epochs
         if epoch % args.test_every == 0:
