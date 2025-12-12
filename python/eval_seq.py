@@ -10,6 +10,7 @@ import yaml
 from plotly.subplots import make_subplots
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
+from torch.nn import Module
 
 from python.utils.eval_utils import Model, check_for_cache, compose_metadata, get_model_components, run_inference, \
     top_sorted_dict
@@ -20,6 +21,8 @@ from python.utils.save_load import save_csv_and_metadata
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--nets', '-n', nargs='*', default='rnn', help='Nets to test')
+    parser.add_argument('--cache_only_nets', nargs='*', default=None,
+                        help='Nets to load results from cache without checking')
     parser.add_argument('--top', default=-1, type=int, help='Top N results to show for each net. Use -1 to show all')
     parser.add_argument('--seq_len', default=10, type=int, help='Amount of consecutive data points to use')
     parser.add_argument('--ds', default='full', choices=['full', 'test'], help='Dataset to use')
@@ -72,6 +75,9 @@ def main():
     ckpt_type = args.ckpt_type
     models: dict[str, Model] = {}
 
+    # Cache-only models
+    cache_only_nets = args.cache_only_nets
+
     # Figure path
     figure_prefix = "_".join(nets)
     figure_path = Path('figures') / 'evaluation' / args.ds / figure_prefix
@@ -92,29 +98,38 @@ def main():
             ds_type = exp['common']['ds_type']
             features = ds_features[filter_type][ds_type]
 
-            # Hyperparams
-            input_dim = len(features)
+            if net not in cache_only_nets:
+                # Hyperparams
+                input_dim = len(features)
 
-            prep_cfg, prep_model = get_model_components(net)
+                prep_cfg, prep_model = get_model_components(net)
 
-            cfg = prep_cfg(
-                cfg_path,
-                input_dim,
-                num_classes,
-                sequence_len
-            )
-            model = prep_model(**cfg['model']).to(device)
+                cfg = prep_cfg(
+                    cfg_path,
+                    input_dim,
+                    num_classes,
+                    sequence_len
+                )
+                model = prep_model(**cfg['model']).to(device)
 
-            # load model
-            checkpoint = torch.load(ckpt_path, map_location=device)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            _model = Model(
-                net_type=net,
-                filter_type=filter_type,
-                dataset=ds_type,
-                model=model,
-                features=features,
-            )
+                # load model
+                checkpoint = torch.load(ckpt_path, map_location=device)
+                model.load_state_dict(checkpoint['model_state_dict'])
+                _model = Model(
+                    net_type=net,
+                    filter_type=filter_type,
+                    dataset=ds_type,
+                    model=model,
+                    features=features,
+                )
+            else:
+                _model = Model(
+                    net_type=net,
+                    filter_type=filter_type,
+                    dataset=ds_type,
+                    model=Module(),
+                    features=features,
+                )
             models[exp['name']] = _model
 
     # Process data
@@ -133,6 +148,8 @@ def main():
         cache_info_path = cache_path / f'linear_{model_name}.csv'
         cols_in_cache = info_cols + ['predictions']
         use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
+
+        use_cache = use_cache or model_wrapper.net_type in cache_only_nets
 
         if use_cache:
             print(f'Using cached results for: linear – {model_name}')
@@ -308,6 +325,8 @@ def main():
             cache_info_path = cache_path / f'{df_name}_{model_name}.csv'
             cols_in_cache = info_cols + ['predictions']
             use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
+
+            use_cache = use_cache or model_wrapper.net_type in cache_only_nets
 
             if use_cache:
                 print(f'Using cached results for: {df_name} – {model_name}')
