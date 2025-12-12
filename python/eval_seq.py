@@ -118,7 +118,7 @@ def main():
             models[exp['name']] = _model
 
     # Process data
-    batch_size = 2 ** 15
+    batch_size = 2 ** 12
 
     group_cols = ['surf', 'movedir', 'speedamp']
     info_cols = ['surf', 'movedir']
