@@ -23,6 +23,7 @@ def main():
         in_data['type_3'] = in_data['type_1'] + in_data['type_2']
         if filter == 'kalman':
             in_data['type_4'] = in_data['type_2'] + ['movedir']
+            in_data['type_5'] = ['movedir', 'speedamp', f'Ke1{suffix}']
         datasets[filter] = in_data
 
 
