@@ -19,7 +19,7 @@ def run_training_loop(
     Generic training loop that handles forward/backward passes, Optuna reporting, and pruning
     """
     optimizer = AdamW(model.parameters(), lr=lr)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
     criterion = nn.CrossEntropyLoss()
 
     accuracy = 0

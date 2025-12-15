@@ -116,7 +116,7 @@ def train(model_constructor, prep_cfg_func):
         start_epoch = checkpoint['epoch']
 
     criterion = nn.CrossEntropyLoss()
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=2, min_lr=1e-4)
+    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
 
     print('\n--- Starting Training ---')
     best_acc = 0
