@@ -21,7 +21,7 @@ from python.utils.save_load import save_csv_and_metadata
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--nets', '-n', nargs='*', default='rnn', help='Nets to test')
-    parser.add_argument('--cache_only_nets', nargs='*', default=None,
+    parser.add_argument('--cache_only_nets', nargs='*', default=[],
                         help='Nets to load results from cache without checking')
     parser.add_argument('--top', default=-1, type=int, help='Top N results to show for each net. Use -1 to show all')
     parser.add_argument('--seq_len', default=10, type=int, help='Amount of consecutive data points to use')
