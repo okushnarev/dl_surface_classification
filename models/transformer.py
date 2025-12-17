@@ -40,7 +40,6 @@ class Transformer(nn.Module):
         # Classification head
         self.classifier = build_mlp_from_config(classification_layers, embedding_dim, num_classes)
 
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         x = self.encoder(x)
