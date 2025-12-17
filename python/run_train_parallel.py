@@ -10,6 +10,7 @@ import yaml
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--nn_name', type=str, default='rnn', required=True, help='Name of neural network')
+    parser.add_argument('--config_name', type=str, default='experiments', help='Name of config file')
     parser.add_argument('--processes', type=int, default=1, help='Number of processes to use')
     return parser.parse_args()
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
 
     directory = Path(f'python/{nn_name}/')
     # Load experiments from the config file
-    with open(directory / 'configs' / 'experiments.yaml', 'r') as f:
+    with open(directory / 'configs' / f'{args.config_name}.yaml', 'r') as f:
         experiments = yaml.safe_load(f)
 
     commands = []
