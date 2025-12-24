@@ -13,42 +13,49 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.data.processing import create_sequences
+from src.models.factory import get_model_components
 from src.utils.io import load_checkpoint, save_checkpoint
+from src.utils.paths import ProjectPaths
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
-    parser.add_argument('--filter', type=str, default='no_filter', help='Filter used to create dataset')
-    parser.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
-    parser.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
-    parser.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
-    parser.add_argument('--config', type=str, default=None, help='Path to config file')
-    parser.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
-    parser.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
-    parser.add_argument('--exp_name', type=str, default='debug', help='Experiment name for a run')
-    parser.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
-                        help='Resume loads checkpoint and continue training\n Restart overwrites everything')
-    return parser.parse_args()
+def add_trainer_args(parent_parser: argparse.ArgumentParser):
+    group = parent_parser.add_argument_group('Trainer')
+    group.add_argument('--epochs', type=int, default=100)
+    group.add_argument('--filter', type=str, default='no_filter')
+    group.add_argument('--ds_type', type=str, default='type_1')
+    group.add_argument('--use_cuda', action='store_true')
+    group.add_argument('--seq_len', type=int, default=10)
+    group.add_argument('--config', type=str, default=None, help='Path to JSON config')
+    group.add_argument('--test_every', type=int, default=20)
+    group.add_argument('--save_every', type=int, default=10)
+    group.add_argument('--exp_name', type=str, default=None)
+    group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart')
+    return parent_parser
 
 
-def train(model_constructor, prep_cfg_func):
-    torch.multiprocessing.set_start_method('spawn')
-    args = parse_args()
+def train_model(args):
+    # Setup
+    torch.multiprocessing.set_start_method('spawn', force=True)
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
-    print(f'Using device: {device.upper()}\n', )
+    print(f'Using device: {device.upper()}')
 
-    data_path = Path('processed/processed')
+    # Paths
+    data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
 
-    exp_name = args.exp_name or datetime.now().strftime("%Y%m%d_%H%M%S")
-    ckpt_path = Path('processed/runs') / exp_name
+    # Define Run Name
+    run_name = args.exp_name or datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    study_group = getattr(args, 'study_group', 'debug')
+    ckpt_path = ProjectPaths.get_run_dir(study_group, run_name)
     ckpt_path.mkdir(parents=True, exist_ok=True)
 
-    df_train = pd.read_csv(data_path / 'train.csv')
-    df_test = pd.read_csv(data_path / 'test.csv')
+    # 3. Load Data
+    print(f'Loading data from {data_dir}')
+    df_train = pd.read_csv(data_dir / 'train.csv')
+    df_test = pd.read_csv(data_dir / 'test.csv')
 
-    with open(data_path / 'features.json', 'r') as f:
-        datasets = json.load(f)
+    with open(ProjectPaths.get_feature_config_path(args.dataset), 'r') as f:
+        datasets_cfg = json.load(f)
 
     # Params
     group_cols = ['surf', 'movedir', 'speedamp']
@@ -56,31 +63,25 @@ def train(model_constructor, prep_cfg_func):
     target_col = 'surf'
     sequence_length = args.seq_len
 
-    batch_size = 2 ** 12
-
-    # Encode labels
+    # Encode and Scale
     label_encoder = LabelEncoder()
     df_train[target_col] = label_encoder.fit_transform(df_train[target_col])
     df_test[target_col] = label_encoder.transform(df_test[target_col])
 
-    num_classes = len(label_encoder.classes_)
-    print(f'Classes found: {label_encoder.classes_}')
-
-    # Scale features
     scaler = StandardScaler()
     df_train[feature_cols] = scaler.fit_transform(df_train[feature_cols])
     df_test[feature_cols] = scaler.transform(df_test[feature_cols])
 
-    # Save scaler
+    # Save Scaler for Inference later
     with open(ckpt_path / 'scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
 
-    # Create the sequences
+    # Create Sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, sequence_length)
     X_test, y_test = create_sequences(df_test, group_cols, feature_cols, target_col, sequence_length)
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
-    # Create DataLoaders
+    # Create Datasets
     X_train = torch.tensor(X_train, dtype=torch.float32)
     y_train = torch.tensor(y_train, dtype=torch.long)
     train_dataset = TensorDataset(X_train, y_train)
@@ -89,44 +90,57 @@ def train(model_constructor, prep_cfg_func):
     y_test = torch.tensor(y_test, dtype=torch.long)
     test_dataset = TensorDataset(X_test, y_test)
 
+    # Create DataLoaders
     train_loader = DataLoader(
         train_dataset,
-        batch_size=batch_size,
+        batch_size=args.batch_size,
         shuffle=True,
         pin_memory=True,
-        num_workers=2,
+        num_workers=2
     )
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    # Model
-    input_dim = len(feature_cols)
-    cfg_path = Path(args.config) if args.config is not None else None
-    cfg = prep_cfg_func(cfg_path, input_dim, num_classes, sequence_length)
-    model = model_constructor(**cfg['model']).to(device)
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        shuffle=False
+    )
 
-    # Training
-    num_epochs = args.epochs
+    # Initialize Model
+    components = get_model_components(args.nn_name)
+    prep_cfg_func = components['prep_config']
+    ModelClass = components['class']
 
-    # Load model and optimizer from checkpoint if allowed by behavior
+    # Parse config file to get model args
+    cfg_path = Path(args.config) if args.config else None
+    cfg = prep_cfg_func(
+        cfg_path,
+        input_dim=len(feature_cols),
+        num_classes=len(label_encoder.classes_),
+        sequence_length=args.seq_len
+    )
+
+    model = ModelClass(**cfg['model_kwargs']).to(device)
     optimizer = optim.Adam(model.parameters(), lr=cfg['optimizer']['start_lr'])
+    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
+    criterion = nn.CrossEntropyLoss()
+
+    # Training Loop
     start_epoch = 0
-    if args.restart_behavior == 'resume' and (ckpt := ckpt_path / 'last.pt').exists():
+    if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
         print('Resuming training from checkpoint')
-        checkpoint = load_checkpoint(model, optimizer, ckpt, device)
+        checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
         start_epoch = checkpoint['epoch']
 
-    criterion = nn.CrossEntropyLoss()
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
-
-    print('\n--- Starting Training ---')
+    print(f'\n--- Starting Training: {args.nn_name} ---')
     best_acc = 0
-    loss = 0
-    for epoch in range(start_epoch, num_epochs):
+
+    for epoch in range(start_epoch, args.epochs):
         model.train()
         epoch_loss = 0
         for sequences, labels in train_loader:
             sequences = sequences.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
+
             outputs = model(sequences)
             loss = criterion(outputs, labels)
             epoch_loss += loss.item()
@@ -139,45 +153,27 @@ def train(model_constructor, prep_cfg_func):
         scheduler.step(epoch_loss)
 
         current_lr = optimizer.param_groups[0]['lr']
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Epoch Loss: {epoch_loss:.10f}, LR: {current_lr:.3e}')
+        print(f'Epoch [{epoch + 1}/{args.epochs}] Loss: {epoch_loss:.6f} LR: {current_lr:.2e}')
 
-        # Test every N epochs
-        if epoch % args.test_every == 0:
+        # Test
+        if epoch % args.test_every == 0 or epoch == args.epochs - 1:
             model.eval()
+            correct, total = 0, 0
             with torch.no_grad():
-                correct, total = 0, 0
                 for sequences, labels in test_loader:
-                    sequences = sequences.to(device, non_blocking=True)
-                    labels = labels.to(device, non_blocking=True)
+                    sequences, labels = sequences.to(device), labels.to(device)
                     outputs = model(sequences)
-                    predicted = torch.argmax(outputs.data, 1)
-
-                    total += len(labels)
+                    predicted = torch.argmax(outputs, 1)
+                    total += labels.size(0)
                     correct += (predicted == labels).sum().item()
+
             test_acc = correct / total
             print(f'Accuracy on the test set: {100 * test_acc:.2f} %')
-            # Save model if the best accuracy achieved
+
             if test_acc > best_acc:
                 best_acc = test_acc
                 print('The best accuracy found')
-                save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'best.pt')
+                save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'best.pt')
 
-        # Save checkpoint every N epoch
-        if epoch % args.save_every == 0:
-            save_checkpoint(model, optimizer, epoch, loss, ckpt_path / 'last.pt')
-
-    # Test
-    print('\n--- Starting Evaluation ---')
-    model.eval()
-    with torch.no_grad():
-        correct, total = 0, 0
-        for sequences, labels in test_loader:
-            sequences = sequences.to(device, non_blocking=True)
-            labels = labels.to(device, non_blocking=True)
-            outputs = model(sequences)
-            _, predicted = torch.max(outputs.data, 1)
-
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    print(f'Accuracy on the test set: {100 * correct / total:.2f} %')
-    save_checkpoint(model, optimizer, num_epochs, loss, ckpt_path / 'last.pt')
+        if epoch % args.save_every == 0 or epoch == args.epochs - 1:
+            save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'last.pt')
