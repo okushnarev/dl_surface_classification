@@ -35,7 +35,7 @@ def main():
         metadata=metadata,
         features=features,
     )
-    output_path = ProjectPaths.get_feature_config_path('main')
+    output_path = ProjectPaths.get_dataset_config_path('main')
     with output_path.open('w') as f:
         json.dump(output, f, indent=2)
 

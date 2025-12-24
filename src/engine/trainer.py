@@ -54,7 +54,7 @@ def train_model(args):
     df_train = pd.read_csv(data_dir / 'train.csv')
     df_test = pd.read_csv(data_dir / 'test.csv')
 
-    with open(ProjectPaths.get_feature_config_path(args.dataset), 'r') as f:
+    with open(ProjectPaths.get_dataset_config_path(args.dataset), 'r') as f:
         datasets_cfg = json.load(f)
 
     # Params

@@ -29,7 +29,7 @@ class ProjectPaths:
         return cls._ROOT / 'datasets' / 'raw'
 
     @classmethod
-    def get_feature_config_path(cls, dataset_scope: str) -> Path:
+    def get_dataset_config_path(cls, dataset_scope: str) -> Path:
         """
         Returns: configs/datasets/<dataset_scope>/dataset_config.json
         """
