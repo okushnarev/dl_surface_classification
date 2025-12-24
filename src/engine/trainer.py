@@ -58,10 +58,9 @@ def train_model(args):
         datasets_cfg = json.load(f)
 
     # Params
-    group_cols = ['surf', 'movedir', 'speedamp']
-    feature_cols = datasets[args.filter][args.ds_type]
-    target_col = 'surf'
-    sequence_length = args.seq_len
+    group_cols = datasets_cfg['metadata']['group_cols']
+    target_col = datasets_cfg['metadata']['target_col']
+    feature_cols = datasets_cfg['features'][args.filter][args.ds_type]
 
     # Encode and Scale
     label_encoder = LabelEncoder()

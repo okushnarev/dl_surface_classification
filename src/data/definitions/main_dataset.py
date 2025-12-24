@@ -1,11 +1,16 @@
 import json
-from pathlib import Path
+
+from src.utils.paths import ProjectPaths
 
 
 def main():
-    output_path = Path('processed/processed')
 
-    datasets = {}
+    metadata = {
+        'group_cols': ['surf', 'movedir', 'speedamp'],
+        'target_col': 'surf'
+    }
+
+    features = {}
     filters = {
         'no_filter': '',
         'kalman':    '_corr',
@@ -24,11 +29,15 @@ def main():
         if filter == 'kalman':
             in_data['type_4'] = in_data['type_2'] + ['movedir']
             in_data['type_5'] = ['movedir', 'speedamp', f'Ke1{suffix}']
-        datasets[filter] = in_data
+        features[filter] = in_data
 
-
+    output = dict(
+        metadata=metadata,
+        features=features,
+    )
+    output_path = ProjectPaths.get_feature_config_path('main')
     with (output_path / 'features.json').open('w') as f:
-        json.dump(datasets, f, indent=2)
+        json.dump(output, f, indent=2)
 
 
 if __name__ == '__main__':
