@@ -76,8 +76,8 @@ def train_model(args):
         pickle.dump(scaler, f)
 
     # Create Sequences
-    X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, sequence_length)
-    X_test, y_test = create_sequences(df_test, group_cols, feature_cols, target_col, sequence_length)
+    X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
+    X_test, y_test = create_sequences(df_test, group_cols, feature_cols, target_col, args.seq_len)
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
     # Create Datasets
