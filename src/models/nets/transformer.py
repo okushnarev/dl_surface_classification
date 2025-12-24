@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from src.models.schemas import MLPLayerConfig, build_mlp_from_config
-from src.utils.optimization_utils import run_training_loop
 
 
 class Transformer(nn.Module):

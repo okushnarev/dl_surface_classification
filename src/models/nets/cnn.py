@@ -4,9 +4,7 @@ from pathlib import Path
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from src.cnn.train_cnn import CNNTrainWrapper
 from src.models.schemas import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config, build_mlp_from_config
-from src.utils.optimization_utils import run_training_loop
 
 
 class CNN(nn.Module):
