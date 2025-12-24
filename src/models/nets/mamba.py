@@ -43,14 +43,52 @@ class MambaClassifier(nn.Module):
         return output
 
 
-class MambaConfig(BaseModel):
-    # Always the same
-    expand: int = 2
-    d_conv: int = 4
+def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
+    if cfg_path is not None and cfg_path.exists():
+        with open(cfg_path, 'r') as f:
+            config = json.load(f)['params']
 
-    # Can vary
-    d_state: Literal[64, 128] = 64
-    headdim: Literal[64, 128] = 64
+        embedding_dim = config['embedding_dim']
+
+        # Mamba params
+        d_state = config['d_state']
+        headdim = config['headdim']
+        mamba_config = MambaConfig(
+            d_state=d_state,
+            headdim=headdim,
+        )
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=0.2)
+            for idx in range(config['encoder_n_layers'])
+        ]
+
+        start_lr = config['lr']
+    else:
+        # Defaults
+        embedding_dim = 32
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=16, dropout=0.2),
+            MLPLayerConfig(out_dim=32, dropout=0.2),
+        ]
+
+        mamba_config = MambaConfig()
+
+        start_lr = 1e-2
+
+    return dict(
+        model=dict(
+            input_dim=input_dim,
+            encoder_layers=encoder_layers,
+            mamba_config=mamba_config,
+            embedding_dim=embedding_dim,
+            output_dim=num_classes,
+        ),
+        optimizer=dict(
+            start_lr=start_lr,
+        )
+    )
 
 
 def mamba_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):

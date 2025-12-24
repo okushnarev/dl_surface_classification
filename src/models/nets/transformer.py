@@ -55,6 +55,60 @@ class Transformer(nn.Module):
         return x
 
 
+def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: int = None):
+    if cfg_path is not None and cfg_path.exists():
+        with open(cfg_path, 'r') as f:
+            config = json.load(f)['params']
+
+        embedding_dim = config['embedding_dim']
+        num_transformer_heads = config['num_transformer_heads']
+        num_transformer_layers = config['num_transformer_layers']
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=0.2)
+            for idx in range(config['encoder_n_layers'])
+        ]
+
+        classification_layers = [
+            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=0.2)
+            for idx in range(config['classification_n_layers'])
+        ]
+
+        start_lr = config['lr']
+    else:
+        # Defaluts
+        embedding_dim = 32
+        num_transformer_heads = 1
+        num_transformer_layers = 1
+
+        encoder_layers = [
+            MLPLayerConfig(out_dim=16, dropout=0.2),
+            MLPLayerConfig(out_dim=32, dropout=0.2),
+        ]
+
+        classification_layers = [
+            MLPLayerConfig(out_dim=32, dropout=0.2),
+        ]
+
+        start_lr = 1e-2
+
+    return dict(
+        model=dict(
+            input_dim=input_dim,
+            encoder_layers=encoder_layers,
+            embedding_dim=embedding_dim,
+            num_transformer_heads=num_transformer_heads,
+            num_transformer_layers=num_transformer_layers,
+            classification_layers=classification_layers,
+            num_classes=num_classes,
+        ),
+        optimizer=dict(
+            start_lr=start_lr,
+        )
+    )
+
+
+
 def transformer_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):
     """Defines a single trial using a fixed train/validation split."""
 
