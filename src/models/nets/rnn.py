@@ -80,11 +80,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     )
 
 
-# --- 2. OPTUNA SEARCH SPACE (Moved from optimize_rnn.py) ---
+
 def get_rnn_optuna_params(trial):
-    """
-    Defines hyperparameter search space.
-    """
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
 
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
@@ -103,9 +100,6 @@ def get_rnn_optuna_params(trial):
             encoder_layers=encoder_layers,
             embedding_dim=embedding_dim,
             rnn_hidden_dim=rnn_hidden_dim,
-            # input_dim/num_classes injected by optimizer engine
         ),
         lr=lr
     )
-
-    return cfg
