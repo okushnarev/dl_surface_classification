@@ -3,10 +3,9 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 
-from src.modules.individual_tokenizer import NumericalFeatureTokenizer
 from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from src.modules.individual_tokenizer import NumericalFeatureTokenizer
 
 
 class TransformerFullSeq(nn.Module):

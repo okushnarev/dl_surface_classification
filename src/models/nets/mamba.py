@@ -4,9 +4,7 @@ from typing import Literal
 
 from mamba_ssm import Mamba2
 from pydantic import BaseModel
-from torch import nn
-from torch import Tensor
-from torch.utils.data import DataLoader
+from torch import Tensor, nn
 
 from src.models.schemas import MLPLayerConfig, build_mlp_from_config
 

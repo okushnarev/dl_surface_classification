@@ -4,10 +4,9 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 from pydantic import BaseModel
-from torch.utils.data import DataLoader
 
-from src.modules.cross_attention import CrossAttention, CrossAttentionLayer
 from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from src.modules.cross_attention import CrossAttention, CrossAttentionLayer
 
 
 class TransformerCrossAttnConfig(BaseModel):
