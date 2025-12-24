@@ -36,7 +36,7 @@ def main():
         features=features,
     )
     output_path = ProjectPaths.get_feature_config_path('main')
-    with (output_path / 'features.json').open('w') as f:
+    with output_path.open('w') as f:
         json.dump(output, f, indent=2)
 
 
