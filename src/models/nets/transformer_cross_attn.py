@@ -174,12 +174,9 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     )
 
 
-def transformer_cross_attn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs,
-                                     seed):
-    """Defines a single trial using a fixed train/validation split."""
-
-    # Suggest Hyperparameters
+def get_optuna_params(trial):
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
+
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=4, high=8)
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
@@ -188,62 +185,34 @@ def transformer_cross_attn_objective(trial, val_dataset, input_dim, num_steps, n
     num_cross_attn_heads = 2 ** trial.suggest_int('num_cross_attn_heads_pow', low=0, high=2)
     num_cross_attn_layers = trial.suggest_int('num_cross_attn_layers', low=1, high=4)
 
+    # Encoder Layers
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
     encoder_dims = [2 ** trial.suggest_int(f'encoder_dim_{i}_pow', low=4, high=8) for i in range(encoder_n_layers)]
+    encoder_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in encoder_dims]
 
+    # Classification Layers
     classification_n_layers = trial.suggest_int('classification_n_layers', 1, 4)
     classification_dims = [2 ** trial.suggest_int(f'classification_dim_{i}_pow', low=4, high=8) for i in
                            range(classification_n_layers)]
+    classification_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in classification_dims]
 
+    # Cross Attn FFN
     cross_attn_n_layers = trial.suggest_int('cross_attn_n_layers', 1, 4)
     cross_attn_dims = [2 ** trial.suggest_int(f'cross_attn_dim_{i}_pow', low=4, high=8) for i in
                        range(cross_attn_n_layers)]
+    cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in cross_attn_dims]
 
-    encoder_layers = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
-        for d in encoder_dims
-    ]
-    classification_layers = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
-        for d in classification_dims
-    ]
-
-    cross_attn_layers = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
-        for d in cross_attn_dims
-    ]
-
-    model_cfg = TransformerCrossAttnConfig(
-        input_dim=input_dim,
-        sequence_length=num_steps,
-        embedding_dim=embedding_dim,
-
-        encoder_layers=encoder_layers,
-
-        num_transformer_heads=num_transformer_heads,
-        num_transformer_layers=num_transformer_layers,
-
-        num_cross_attn_heads=num_cross_attn_heads,
-        num_cross_attn_layers=num_cross_attn_layers,
-        cross_attn_ffn_config=cross_attn_layers,
-
-        classification_layers=classification_layers,
-        num_classes=num_classes,
+    return dict(
+        model_kwargs=dict(
+            embedding_dim=embedding_dim,
+            encoder_layers=encoder_layers,
+            num_transformer_heads=num_transformer_heads,
+            num_transformer_layers=num_transformer_layers,
+            num_cross_attn_heads=num_cross_attn_heads,
+            num_cross_attn_layers=num_cross_attn_layers,
+            cross_attn_ffn_config=cross_attn_layers,
+            classification_layers=classification_layers,
+        ),
+        lr=lr
     )
 
-    # Instantiate Model and Optimizer
-    model = TransformerCrossAttn(model_cfg).to(device)
-
-    # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
-
-    accuracy = run_training_loop(
-        trial,
-        model,
-        val_loader,
-        epochs,
-        lr,
-        device
-    )
-
-    return accuracy

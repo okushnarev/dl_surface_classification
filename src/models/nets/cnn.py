@@ -92,43 +92,29 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     )
 
 
-def cnn_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):
-    """Defines a single trial using a fixed train/validation split."""
-
-    # Suggest Hyperparameters
+def get_optuna_params(trial):
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
+
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
     cnn_channels = [2 ** trial.suggest_int(f'cnn_out_ch_{i}_pow', low=4, high=8) for i in range(cnn_n_layers)]
-    mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
-    mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
-    # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
-
-    # Instantiate Model and Optimizer
     cnn_configs = [
         CNNLayerConfig(out_channels=ch, kernel_size=3)
         for ch in cnn_channels
     ]
+
+    mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
+    mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
+
     mlp_configs = [
         MLPLayerConfig(out_dim=d, dropout=0.2)
         for d in mlp_dims
     ]
-    model = CNNTrainWrapper(
-        input_dim=input_dim,
-        num_steps=num_steps,
-        cnn_configs=cnn_configs,
-        mlp_configs=mlp_configs,
-        num_classes=num_classes
-    ).to(device)
 
-    accuracy = run_training_loop(
-        trial,
-        model,
-        val_loader,
-        epochs,
-        lr,
-        device
+    return dict(
+        model_kwargs=dict(
+            cnn_configs=cnn_configs,
+            mlp_configs=mlp_configs
+        ),
+        lr=lr
     )
-
-    return accuracy

@@ -98,20 +98,21 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     )
 
 
-def mamba_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch_size, device, epochs, seed):
-    """Defines a single trial using a fixed train/validation split."""
-
-    # Suggest Hyperparameters
+def get_optuna_params(trial):
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
+
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=6, high=9)
 
+    # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
     headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
+
     mamba_config = MambaConfig(
         d_state=d_state,
         headdim=headdim,
     )
 
+    # Encoder config
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
     encoder_dims = [2 ** trial.suggest_int(f'encoder_dim_{i}_pow', low=4, high=8) for i in range(encoder_n_layers)]
 
@@ -120,25 +121,11 @@ def mamba_objective(trial, val_dataset, input_dim, num_steps, num_classes, batch
         for d in encoder_dims
     ]
 
-    # Create DataLoaders for this trial
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, pin_memory=True)
-
-    # Instantiate Model and Optimizer
-    model = MambaClassifier(
-        input_dim=input_dim,
-        encoder_layers=encoder_layers,
-        mamba_config=mamba_config,
-        embedding_dim=embedding_dim,
-        output_dim=num_classes,
-    ).to(device)
-
-    accuracy = run_training_loop(
-        trial,
-        model,
-        val_loader,
-        epochs,
-        lr,
-        device
+    return dict(
+        model_kwargs=dict(
+            encoder_layers=encoder_layers,
+            mamba_config=mamba_config,
+            embedding_dim=embedding_dim,
+        ),
+        lr=lr
     )
-
-    return accuracy
