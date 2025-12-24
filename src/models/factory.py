@@ -1,41 +1,70 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Dict
 
 
-def get_model_components(net_type: str) -> Tuple[Callable, Any]:
+def get_model_components(net_type: str) -> Dict[str, Any]:
     """
-    Returns the config preparation function and the Model class
-    based on the network type string.
+    Returns a dictionary containing the model components based on the network type string
+
+    :return:
+    Dictionary:
+    - 'class': The nn.Module class
+    - 'prep_config': Callable(path, input_dim, ...) -> dict (For Training)
+    - 'optuna_params': Callable(trial) -> dict (For Optimization)
     """
     match net_type:
         case 'rnn':
-            from src.models.nets.rnn import prep_cfg
+            from src.models.nets.rnn import prep_cfg, get_optuna_params
             from src.models.nets.rnn import TabularRNN
-            return prep_cfg, TabularRNN
+            return {
+                'class':         TabularRNN,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case 'cnn' | 'cnn_manual':
-            from src.models.nets.cnn import prep_cfg
+            from src.models.nets.cnn import prep_cfg, get_optuna_params
             from src.models.nets.cnn import CNN
-            return prep_cfg, CNN
+            return {
+                'class':         CNN,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case 'transformer':
-            from src.models.nets.transformer import prep_cfg
+            from src.models.nets.transformer import prep_cfg, get_optuna_params
             from src.models.nets.transformer import Transformer
-            return prep_cfg, Transformer
+            return {
+                'class':         Transformer,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case 'transformer_cross_attn':
-            from src.models.nets.transformer_cross_attn import prep_cfg
+            from src.models.nets.transformer_cross_attn import prep_cfg, get_optuna_params
             from src.models.nets.transformer_cross_attn import TransformerCrossAttn
-            return prep_cfg, TransformerCrossAttn
+            return {
+                'class':         TransformerCrossAttn,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case 'transformer_full_seq':
-            from src.models.nets.transformer_full_seq import prep_cfg
+            from src.models.nets.transformer_full_seq import prep_cfg, get_optuna_params
             from src.models.nets.transformer_full_seq import TransformerFullSeq
-            return prep_cfg, TransformerFullSeq
+            return {
+                'class':         TransformerFullSeq,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case 'mamba':
-            from src.models.nets.mamba import prep_cfg
+            from src.models.nets.mamba import prep_cfg, get_optuna_params
             from src.models.nets.mamba import MambaClassifier
-            return prep_cfg, MambaClassifier
+            return {
+                'class':         MambaClassifier,
+                'prep_config':   prep_cfg,
+                'optuna_params': get_optuna_params
+            }
 
         case _:
-            raise ValueError(f'Unknown net {net_type}')
+            raise ValueError(f'Unknown net type: {net_type}')
