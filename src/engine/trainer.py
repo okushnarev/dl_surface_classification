@@ -23,6 +23,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
 
     group.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
     group.add_argument('--filter', type=str, default='no_filter', help='Filter used to create dataset')
+    group.add_argument('--batch_size', type=int, default=32768)
     group.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
     group.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     group.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
