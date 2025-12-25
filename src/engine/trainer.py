@@ -74,9 +74,11 @@ def train_model(args):
     df_train[feature_cols] = scaler.fit_transform(df_train[feature_cols])
     df_test[feature_cols] = scaler.transform(df_test[feature_cols])
 
-    # Save Scaler for Inference later
+    # Save scaler and label encoder
     with open(ckpt_path / 'scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
+    with open(ckpt_path / 'label_encoder.pkl', 'wb') as f:
+        pickle.dump(label_encoder, f)
 
     # Create Sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
