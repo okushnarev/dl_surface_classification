@@ -44,6 +44,17 @@ class ProjectPaths:
         return cls._ROOT / 'configs' / 'model_params' / model_name / dataset_scope
 
     @classmethod
+    def get_params_path(cls, model_name: str, dataset_scope: str, exp_name: str) -> Path:
+        """
+        Returns: configs/model_params/<model>/<dataset>/best_params_<exp_name>.json
+        """
+        # We ensure the filename is safe (replace spaces with underscores if any)
+        safe_name = exp_name.replace(' ', '_')
+        filename = f'best_params_{safe_name}.json'
+
+        return cls.get_params_dir(model_name, dataset_scope) / filename
+
+    @classmethod
     def get_experiment_config_path(cls, model_name: str, config_name: str) -> Path:
         """
         Returns: configs/experiments/<model_name>/<config_name>.yaml

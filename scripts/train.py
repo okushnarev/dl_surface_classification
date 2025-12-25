@@ -111,15 +111,6 @@ def run_batch_mode(args):
             run_config['nn_name'] = args.nn_name
             run_config['exp_name'] = exp_name
 
-            # Handle 'param_file' resolution (for JSON config)
-            if 'param_file' in exp:
-                run_config['config'] = exp['param_file']
-            elif 'param_file' not in run_config and 'config' not in run_config:
-                # Auto-construct path if not provided
-                if 'filter' in run_config and 'ds_type' in run_config:
-                    p_dir = ProjectPaths.get_params_dir(args.nn_name, run_config.get('dataset', 'main'))
-                    p_file = f'best_params_{run_config["filter"]}_{run_config["ds_type"]}.json'
-                    run_config['config'] = str(p_dir / p_file)
             # Compose CLI command
             # Call THIS script again, but in --single_run mode
             cmd = [sys.executable, str(Path(__file__).resolve()), '--single_run']

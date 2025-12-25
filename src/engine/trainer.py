@@ -26,7 +26,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
     group.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     group.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
-    group.add_argument('--config', type=str, default=None, help='Path to JSON config')
+    group.add_argument('--param_file', type=str, default=None, help='Path to JSON config')
     group.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
     group.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
     group.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
@@ -113,7 +113,21 @@ def train_model(args):
     ModelClass = components['class']
 
     # Parse config file to get model args
-    cfg_path = Path(args.config) if args.config else None
+    if args.param_file:
+        # Explicit path provided via CLI/YAML
+        cfg_path = Path(args.param_file)
+    elif args.exp_name:
+        # Auto-resolve based on experiment name
+        cfg_path = ProjectPaths.get_params_path(args.nn_name, args.dataset, args.exp_name)
+    else:
+        # Fallback/Error. Shouldn't happen in proper runs
+        cfg_path = None
+        print('Warning: No param_file and no exp_name. Using model defaults.')
+
+    # Check for a valid config path
+    if cfg_path and not cfg_path.exists():
+        raise FileNotFoundError(f'Parameter file not found: {cfg_path}')
+
     cfg = prep_cfg_func(
         cfg_path,
         input_dim=len(feature_cols),

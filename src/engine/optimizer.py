@@ -203,10 +203,11 @@ def run_optimization(args):
         save_path = Path(args.output_file)
     else:
         # Auto-generate path based on conventions if no explicit output provided
-        base_dir = ProjectPaths.get_params_dir(args.nn_name, args.dataset)
-        base_dir.mkdir(parents=True, exist_ok=True)
-        filename = f'best_params_{args.filter}_{args.ds_type}.json'
-        save_path = base_dir / filename
+        name = args.exp_name if args.exp_name else f'{args.filter}_{args.ds_type}'
+        save_path = ProjectPaths.get_params_path(args.nn_name, args.dataset, name)
+
+    # Ensure the directory exists
+    save_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f'Saving best params to: {save_path}')
     with open(save_path, 'w') as f:
