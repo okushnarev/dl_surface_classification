@@ -6,8 +6,15 @@ from src.utils.paths import ProjectPaths
 def main():
     # Metadata
     metadata = {
-        'group_cols': ['surf', 'run_idx'],
-        'target_col': 'surf'
+        'group_cols':   ['surf', 'run_idx'],
+        'target_col':   'surf',
+        'class_colors': {
+            'asphalt':    '#2d2d2d',
+            'flooring':   '#c8a2c8',
+            'ice':        '#89dee2',
+            'sandy_loam': '#d6c68b',  # silty_loam in the article
+            'snow':       '#f0f8ff',
+        }
     }
 
     # Features

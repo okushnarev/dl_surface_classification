@@ -4,10 +4,15 @@ from src.utils.paths import ProjectPaths
 
 
 def main():
-
     metadata = {
-        'group_cols': ['surf', 'movedir', 'speedamp'],
-        'target_col': 'surf'
+        'group_cols':   ['surf', 'movedir', 'speedamp'],
+        'target_col':   'surf',
+        'class_colors': {
+            'gray':  '#b6b6b6',
+            'green': '#4fc54c',
+            'table': '#9f6a4d',
+            'brown': '#ad3024',
+        }
     }
 
     features = {}
