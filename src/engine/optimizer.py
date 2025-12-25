@@ -208,6 +208,6 @@ def run_optimization(args):
         filename = f'best_params_{args.filter}_{args.ds_type}.json'
         save_path = base_dir / filename
 
-    print(f"Saving best params to: {save_path}")
+    print(f'Saving best params to: {save_path}')
     with open(save_path, 'w') as f:
         json.dump(res, f, indent=2)
