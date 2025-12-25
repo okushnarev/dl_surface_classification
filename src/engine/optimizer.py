@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import json
 from functools import partial
 from pathlib import Path
@@ -95,12 +96,18 @@ def generic_objective(trial, net_name, val_dataset, input_dim, num_classes, seq_
     # Generate hyperparameters from the search space
     config = get_params_func(trial)
 
-    # Read and Update the model params
+    # Optuna model params
     model_kwargs = config['model_kwargs']
-    model_kwargs['input_dim'] = input_dim
-    model_kwargs['num_classes'] = num_classes
-
-    model_kwargs['sequence_length'] = seq_len
+    # Check if the model accepts std_kwargs and update model_kwargs
+    std_kwargs = dict(
+        input_dim=input_dim,
+        num_classes=num_classes,
+        seq_len=seq_len,
+    )
+    model_signature = inspect.signature(ModelClass.__init__)
+    for k, v in std_kwargs.items():
+        if k in model_signature.parameters:
+            model_kwargs[k] = v
 
     # Create model
     model = ModelClass(**model_kwargs).to(device)
