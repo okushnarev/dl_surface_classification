@@ -21,7 +21,7 @@ def parse_args():
 
     # Runner args
     parser.add_argument('--nn_name', type=str, help='Name of the model (folder in configs/experiments)')
-    parser.add_argument('--config_name', type=str, default='experiments', help='YAML config filename')
+    parser.add_argument('--config_name', type=str, default='main', help='YAML config filename')
 
     # Optimizer args from engine/optimizer
     # Adds --n_trials, --n_jobs, --epochs, --filter, etc.
