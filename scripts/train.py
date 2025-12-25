@@ -93,7 +93,7 @@ def run_batch_mode(args):
                 continue
 
             # Merge arguments. Priority: Experiment > Defaults
-            run_config = defaults.copy()
+            run_config = {k: v for k, v in defaults.items() if not isinstance(v, dict)}
 
             # Merge sub-sections (common, train)
             for section in ['common', 'train']:
