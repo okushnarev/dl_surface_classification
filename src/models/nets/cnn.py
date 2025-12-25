@@ -9,7 +9,7 @@ from src.models.schemas import CNNLayerConfig, MLPLayerConfig, build_cnn_from_co
 class CNN(nn.Module):
     def __init__(self,
                  input_dim: int,
-                 num_steps: int,
+                 sequence_length: int,
                  cnn_configs: list[CNNLayerConfig],
                  mlp_configs: list[MLPLayerConfig],
                  num_classes: int):
@@ -18,7 +18,7 @@ class CNN(nn.Module):
 
         Args:
             input_dim (int): Number of raw features/channels.
-            num_steps (int): Length of the raw sequence.
+            sequence_length (int): Length of the raw sequence.
             cnn_configs (list[CNNLayerConfig]): List of configs for CNN blocks.
             mlp_configs (list[MLPLayerConfig]): List of configs for MLP blocks.
             num_classes (int): Number of classes for the final output.
@@ -31,7 +31,7 @@ class CNN(nn.Module):
         # CNN part
         (self.cnn_feature_extractor,
          current_channels,
-         current_num_steps) = build_cnn_from_config(cnn_configs, input_dim, num_steps)
+         current_num_steps) = build_cnn_from_config(cnn_configs, input_dim, sequence_length)
 
         # MLP part
         if current_num_steps == 0:
@@ -81,7 +81,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     return dict(
         model=dict(
             input_dim=input_dim,
-            num_steps=sequence_length,
+            sequence_length=sequence_length,
             cnn_configs=cnn_configs,
             mlp_configs=mlp_configs,
             num_classes=num_classes,
