@@ -1,12 +1,10 @@
-import pickle
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder
-
 from torch.nn import Module
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -21,6 +19,7 @@ class ModelWrapper:
     dataset: str  # e.g., type_1, type_2
     model: Module = field(repr=False)
     features: list[str] = field(repr=False)
+
 
 def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[str, float]:
     if top_n < 0:
@@ -47,75 +46,72 @@ def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[st
 
 
 def run_inference(
-        model_name: str,
+        model_wrapper: ModelWrapper,
         df: pd.DataFrame,
-        group_cols: str | list[str],
+        group_cols: list[str],
+        feature_cols: list[str],
         target_col: str,
-        sequence_len: int,
         info_cols: list[str],
+        sequence_len: int,
+        batch_size: int,
+        scaler: Any,
         label_encoder: LabelEncoder,
         device: str,
-        batch_size: int,
-        exps_to_unscale: list[str],
-        unscale_cols: list[str]
 ) -> pd.DataFrame:
     """
-    Runs inference for a specific model on a dataframe.
-    Handles scaling, sequence creation, batched inference, and inverse transformation.
+    Runs inference pipeline: Scaling -> Sequence Generation -> Prediction -> Inverse Transform
     """
-    print(f'Running {model_name}')
-
-    # Scaler
-    ckpt_path = Path('processed/runs') / model_name
-    scaler_path = ckpt_path / 'scaler.pkl'
-    with open(scaler_path, 'rb') as f:
-        scaler = pickle.load(f)
-
-    # Features
-    feature_cols = model_wrapper.features
-
-    # DataFrame prep
+    # Prepare Data
     df_copy = df.copy()
+
+    _, _, info_arr = create_sequences(
+        df_copy,
+        group_cols,
+        feature_cols,
+        target_col,
+        sequence_len,
+        info_cols
+    )
+
+    # Scale and encode features
     df_copy[feature_cols] = scaler.transform(df_copy[feature_cols])
+    df_copy[target_col] = label_encoder.transform(df_copy[target_col])
 
-    # Create sequences
-    X, y, info_arr = create_sequences(df_copy, group_cols, feature_cols, target_col, sequence_len, info_cols)
-
-    info = pd.DataFrame(data=info_arr, columns=info_cols)
-    info['surf'] = info['surf'].astype(np.uint8)
-    info['surf'] = label_encoder.inverse_transform(info['surf'])
+    # Create Sequences
+    X, y = create_sequences(
+        df_copy,
+        group_cols,
+        feature_cols,
+        target_col,
+        sequence_len,
+    )
 
     # Create loader
     X = torch.tensor(X, dtype=torch.float32)
     y = torch.tensor(y, dtype=torch.long)
-    eval_dataset = TensorDataset(X, y)
+    dataset = TensorDataset(X, y)
 
-    eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-    # Run tests
+    # Inference
     model = model_wrapper.model
-    predictions = np.array([], dtype=np.uint8)
     model.eval()
+
+    all_predictions = []
     with torch.no_grad():
-        for sequences, labels in eval_loader:
-            sequences = sequences.to(device, non_blocking=True)
-            outputs = model(sequences)
-            predicted = torch.argmax(outputs.data, 1)
+        for seqs, _ in loader:
+            seqs = seqs.to(device)
 
-            predictions = np.hstack([predictions, predicted.cpu().numpy()])
+            outputs = model(seqs)
+            predictions = torch.argmax(outputs, dim=1)
+            all_predictions.append(predictions.cpu().numpy())
 
-    info['predictions'] = label_encoder.inverse_transform(predictions)
+    all_predictions = np.concatenate(all_predictions)
 
-    # Unscale certain columns if needed
-    if model_name in exps_to_unscale:
-        # Create placeholder matrix with the shape that Scaler expects
-        dummy_data = np.zeros((len(info), len(feature_cols)))
-        # Copy data_to_unscale to its corresponding position in the placeholder matrix
-        for _col in unscale_cols:
-            dummy_data[:, feature_cols.index(_col)] = info[_col]
-        dummy_data = scaler.inverse_transform(dummy_data)
-        # Take out only chosen unscaled processed from the placeholder matrix
-        for _col in unscale_cols:
-            info[_col] = dummy_data[:, feature_cols.index(_col)]
+    # Build results dataframe
+    res_df = pd.DataFrame(info_arr, columns=info_cols)
 
-    return info
+    # Add predicitons
+    res_df['prediction'] = label_encoder.inverse_transform(all_predictions)
+
+    return res_df
