@@ -20,17 +20,19 @@ from src.utils.paths import ProjectPaths
 
 def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group = parent_parser.add_argument_group('Trainer')
-    group.add_argument('--epochs', type=int, default=100)
-    group.add_argument('--filter', type=str, default='no_filter')
-    group.add_argument('--ds_type', type=str, default='type_1')
-    group.add_argument('--use_cuda', action='store_true')
-    group.add_argument('--seq_len', type=int, default=10)
+
+    group.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
+    group.add_argument('--filter', type=str, default='no_filter', help='Filter used to create dataset')
+    group.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
+    group.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
+    group.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     group.add_argument('--config', type=str, default=None, help='Path to JSON config')
-    group.add_argument('--test_every', type=int, default=20)
-    group.add_argument('--save_every', type=int, default=10)
-    group.add_argument('--exp_name', type=str, default=None)
-    group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart')
+    group.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
+    group.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
+    group.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
     group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
+    group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
+                       help='Resume loads checkpoint and continue training\n Restart overwrites everything')
     return parent_parser
 
 
