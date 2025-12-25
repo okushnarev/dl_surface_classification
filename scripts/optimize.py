@@ -65,7 +65,7 @@ def run_batch_mode(args):
         print(f'\nRunning Optimization {idx + 1}/{len(experiments)}: {exp_name}')
 
         # Merge arguments. Priority: Experiment > Defaults
-        run_config = defaults.copy()
+        run_config = {k: v for k, v in defaults.items() if not isinstance(v, dict)}
 
         # Merge sub-sections (common, optimization)
         for section in ['common', 'optimization']:
