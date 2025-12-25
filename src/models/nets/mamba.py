@@ -26,7 +26,7 @@ class MambaClassifier(nn.Module):
             encoder_layers: list[MLPLayerConfig],
             mamba_config: dict | MambaConfig,
             embedding_dim: int,
-            output_dim: int):
+            num_classes: int):
         super().__init__()
 
         self.embedding_dim = embedding_dim
@@ -41,7 +41,7 @@ class MambaClassifier(nn.Module):
             **mamba_config.model_dump(),
         )
 
-        self.classifier = nn.Linear(embedding_dim, output_dim)
+        self.classifier = nn.Linear(embedding_dim, num_classes)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.mlp_encoder(x)
@@ -90,7 +90,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             encoder_layers=encoder_layers,
             mamba_config=mamba_config,
             embedding_dim=embedding_dim,
-            output_dim=num_classes,
+            num_classes=num_classes,
         ),
         optimizer=dict(
             start_lr=start_lr,
