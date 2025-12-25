@@ -1,12 +1,11 @@
 import hashlib
+import json
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import torch
 from torch.nn import Module
-
-from src.utils.io import read_csv_and_metadata
 
 
 def get_model_hash(model: torch.nn.Module) -> str:
@@ -40,16 +39,13 @@ def compose_metadata(model: Module, model_name: str, columns: list[str]) -> dict
     )
 
 
-def check_for_cache(path: Path, model: Module, columns: list[str]) -> tuple[bool, pd.DataFrame | None]:
-    use_chache = False
-    info = None
+def check_cache(path: Path, model: Module, columns: list[str]) -> tuple[bool, pd.DataFrame | None]:
+    is_cache_valid = False
     if path.exists():
-        info, metadata = read_csv_and_metadata(path)
-        if metadata is not None:
-            model_hash = get_model_hash(model)
-            use_chache = (model_hash == metadata['hash']
-                          and sorted(metadata['columns']) == sorted(columns))
-        else:
-            print(f'Lacking metadata at path: {path}')
+        with open(path, 'r') as f:
+            metadata = json.load(f)
+        model_hash = get_model_hash(model)
+        is_cache_valid = (model_hash == metadata.get('hash', None)
+                      and sorted(metadata.get('columns', [])) == sorted(columns))
 
-    return use_chache, info
+    return is_cache_valid
