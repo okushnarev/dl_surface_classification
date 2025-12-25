@@ -25,7 +25,6 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--output_file', type=str, default=None, help='Explicit output path for JSON params')
     group.add_argument('--exp_name', type=str, default=None, help='Experiment name')
 
-    # Common training args that affect optimization
     group.add_argument('--epochs', type=int, default=15)
     group.add_argument('--seq_len', type=int, default=10)
     group.add_argument('--batch_size', type=int, default=32768)
