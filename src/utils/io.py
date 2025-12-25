@@ -52,19 +52,4 @@ def save_csv_and_metadata(df: pd.DataFrame, metadata: dict, filepath: Path, **kw
     with open(filepath.with_suffix('.json'), 'w') as file:
         json.dump(metadata, file, indent=2)
 
-def read_csv_and_metadata(filepath: Path, **kwargs) -> tuple[pd.DataFrame, dict | None]:
-    """
-    Reads a csv file with the corresponding json metadata
-    :param filepath: Path to csv file
-    :param kwargs: Additional arguments to pass to pandas.read_csv()
-    :return: Dataframe and dict metadata. Metadata would be None if json file is not found
-    """
-    df = pd.read_csv(filepath, **kwargs)
 
-    metadata = None
-    if (json_path := filepath.with_suffix('.json')).exists():
-        with open(json_path) as file:
-            metadata = json.load(file)
-
-
-    return df, metadata
