@@ -26,7 +26,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     # Common training args that affect optimization
     group.add_argument('--epochs', type=int, default=15)
     group.add_argument('--seq_len', type=int, default=10)
-    group.add_argument('--batch_size', type=int, default=32768)  # Large batch for faster validation
+    group.add_argument('--batch_size', type=int, default=32768)
     group.add_argument('--seed', type=int, default=69)
     group.add_argument('--filter', type=str, default='no_filter')
     group.add_argument('--ds_type', type=str, default='type_1')
