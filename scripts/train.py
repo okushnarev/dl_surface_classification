@@ -102,11 +102,6 @@ def run_batch_mode(args):
                 if section in exp:
                     run_config |= exp[section]
 
-            # Add explicit experiment overrides
-            for k, v in exp.items():
-                if k not in ['common', 'train', 'skip', 'name']:
-                    run_config[k] = v
-
             # Set required args
             run_config['nn_name'] = args.nn_name
             run_config['exp_name'] = exp_name
@@ -116,10 +111,6 @@ def run_batch_mode(args):
             cmd = [sys.executable, str(Path(__file__).resolve()), '--single_run']
 
             for key, value in run_config.items():
-                if key in ['common', 'train']:
-                    # Processed already
-                    continue
-
                 if value is None:
                     continue
 
