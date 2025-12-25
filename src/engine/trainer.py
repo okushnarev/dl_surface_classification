@@ -49,8 +49,7 @@ def train_model(args):
     # Define Run Name
     run_name = args.exp_name or datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    study_group = getattr(args, 'study_group', 'debug')
-    ckpt_path = ProjectPaths.get_run_dir(study_group, run_name)
+    ckpt_path = ProjectPaths.get_run_dir(args.dataset, run_name)
     ckpt_path.mkdir(parents=True, exist_ok=True)
 
     # 3. Load Data
