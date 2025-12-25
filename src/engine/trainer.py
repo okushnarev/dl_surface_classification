@@ -46,13 +46,13 @@ def train_model(args):
     # Paths
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
 
-    # Define Run Name
+    # Define run name
     run_name = args.exp_name or datetime.now().strftime('%Y%m%d_%H%M%S')
 
     ckpt_path = ProjectPaths.get_run_dir(args.dataset, run_name)
     ckpt_path.mkdir(parents=True, exist_ok=True)
 
-    # 3. Load Data
+    # Load Data
     print(f'Loading data from {data_dir}')
     df_train = pd.read_csv(data_dir / 'train.csv')
     df_test = pd.read_csv(data_dir / 'test.csv')
@@ -65,7 +65,7 @@ def train_model(args):
     target_col = datasets_cfg['metadata']['target_col']
     feature_cols = datasets_cfg['features'][args.filter][args.ds_type]
 
-    # Encode and Scale
+    # Encode and scale
     label_encoder = LabelEncoder()
     df_train[target_col] = label_encoder.fit_transform(df_train[target_col])
     df_test[target_col] = label_encoder.transform(df_test[target_col])
@@ -80,12 +80,12 @@ def train_model(args):
     with open(ckpt_path / 'label_encoder.pkl', 'wb') as f:
         pickle.dump(label_encoder, f)
 
-    # Create Sequences
+    # Create sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
     X_test, y_test = create_sequences(df_test, group_cols, feature_cols, target_col, args.seq_len)
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
-    # Create Datasets
+    # Create datasets
     X_train = torch.tensor(X_train, dtype=torch.float32)
     y_train = torch.tensor(y_train, dtype=torch.long)
     train_dataset = TensorDataset(X_train, y_train)
@@ -94,7 +94,7 @@ def train_model(args):
     y_test = torch.tensor(y_test, dtype=torch.long)
     test_dataset = TensorDataset(X_test, y_test)
 
-    # Create DataLoaders
+    # Create dataLoaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
@@ -109,7 +109,7 @@ def train_model(args):
         shuffle=False
     )
 
-    # Initialize Model
+    # Initialize model
     components = get_model_components(args.nn_name)
     prep_cfg_func = components['prep_config']
     ModelClass = components['class']
