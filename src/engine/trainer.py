@@ -30,6 +30,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--save_every', type=int, default=10)
     group.add_argument('--exp_name', type=str, default=None)
     group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart')
+    group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
     return parent_parser
 
 
@@ -95,7 +96,7 @@ def train_model(args):
         batch_size=args.batch_size,
         shuffle=True,
         pin_memory=True,
-        num_workers=2
+        num_workers=args.num_workers,
     )
 
     test_loader = DataLoader(
