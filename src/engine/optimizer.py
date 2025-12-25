@@ -22,6 +22,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--n_trials', type=int, default=50, help='Number of trials')
     group.add_argument('--n_jobs', type=int, default=1, help='Number of parallel jobs')
     group.add_argument('--output_file', type=str, default=None, help='Explicit output path for JSON params')
+    group.add_argument('--exp_name', type=str, default=None, help='Experiment name')
 
     # Common training args that affect optimization
     group.add_argument('--epochs', type=int, default=15)
