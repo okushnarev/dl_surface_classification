@@ -14,19 +14,19 @@ class CNN(nn.Module):
                  mlp_configs: list[MLPLayerConfig],
                  num_classes: int):
         """
-        A flexible 1D CNN framework built from configuration lists.
+        A flexible 1D CNN framework built from configuration lists
 
         Args:
-            input_dim (int): Number of raw features/channels.
-            sequence_length (int): Length of the raw sequence.
-            cnn_configs (list[CNNLayerConfig]): List of configs for CNN blocks.
-            mlp_configs (list[MLPLayerConfig]): List of configs for MLP blocks.
-            num_classes (int): Number of classes for the final output.
+            input_dim (int): Number of raw features/channels
+            sequence_length (int): Length of the raw sequence
+            cnn_configs (list[CNNLayerConfig]): List of configs for CNN blocks
+            mlp_configs (list[MLPLayerConfig]): List of configs for MLP blocks
+            num_classes (int): Number of classes for the final output
         """
         super().__init__()
 
         if not cnn_configs:
-            raise ValueError("cnn_configs list cannot be empty.")
+            raise ValueError('cnn_configs list cannot be empty.')
 
         # CNN part
         (self.cnn_feature_extractor,
@@ -36,8 +36,8 @@ class CNN(nn.Module):
         # MLP part
         if current_num_steps == 0:
             raise ValueError(
-                "Sequence length became 0 after pooling. "
-                "Reduce pooling layers or use a longer initial sequence."
+                'Sequence length became 0 after pooling. '
+                'Reduce pooling layers or use a longer initial sequence.'
             )
 
         flattened_size = current_channels * current_num_steps
