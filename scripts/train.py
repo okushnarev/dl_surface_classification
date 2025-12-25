@@ -62,7 +62,7 @@ def run_batch_mode(args):
     # Queue of experiments to run
     queue = list(enumerate(experiments))
 
-    print(f'--- Starting: {len(experiments)} experiments, {args.jobs} parallel jobs ---')
+    print(f'--- Starting: {len(experiments)} experiments, {args.n_jobs} parallel jobs ---')
 
     while len(queue) > 0 or len(active_processes) > 0:
         # Check for finished processes
@@ -84,7 +84,7 @@ def run_batch_mode(args):
                     print(f'Failed: {name} (Check logs)')
 
         # Launch new processes if there are free slots
-        while len(active_processes) < args.jobs and len(queue) > 0:
+        while len(active_processes) < args.n_jobs and len(queue) > 0:
             idx, exp = queue.pop(0)  # Get the next experiment
             exp_name = exp.get('name', f'exp_{idx}')
 
