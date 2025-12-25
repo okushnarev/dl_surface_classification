@@ -1,9 +1,9 @@
 from plotly import express as px
 
-from src.engine.evaluator import Model
+from src.engine.evaluator import ModelWrapper
 
 
-def prep_name_plotly(model: Model):
+def prep_name_plotly(model: ModelWrapper):
     net_type = model.net_type.upper()
     filter_type = model.filter_type.replace('_', ' ')
     dataset = model.dataset.replace('_', ' ')

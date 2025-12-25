@@ -14,20 +14,13 @@ from src.data.processing import create_sequences
 
 
 @dataclass
-class Model:
+class ModelWrapper:
+    name: str
     net_type: str  # e.g., RNN, CNN
     filter_type: str  # e.g., kalman, no_filter
     dataset: str  # e.g., type_1, type_2
     model: Module = field(repr=False)
     features: list[str] = field(repr=False)
-
-    @property
-    def name(self):
-        net_type = self.net_type.upper()
-        filter_type = self.filter_type.replace('_', ' ')
-        dataset = self.dataset.replace('_', ' ')
-        return f'{net_type} {filter_type} {dataset}'
-
 
 def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[str, float]:
     if top_n < 0:
@@ -55,7 +48,6 @@ def top_sorted_dict(d: dict[str, float], top_n: int, nets: list[str]) -> dict[st
 
 def run_inference(
         model_name: str,
-        model_wrapper: Model,
         df: pd.DataFrame,
         group_cols: str | list[str],
         target_col: str,
