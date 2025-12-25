@@ -70,9 +70,9 @@ def run_batch_mode(args):
         # Merge sub-sections (common, optimization)
         for section in ['common', 'optimization']:
             if section in defaults:
-                run_config.update(defaults[section])
+                run_config |= defaults[section]
             if section in exp:
-                run_config.update(exp[section])
+                run_config |= exp[section]
 
         # Set required args
         run_config['nn_name'] = args.nn_name
@@ -83,7 +83,8 @@ def run_batch_mode(args):
         cmd = [sys.executable, str(Path(__file__).resolve()), '--single_run']
 
         for key, value in run_config.items():
-            if value is None or value == 'None': continue
+            if value is None or value == 'None':
+                continue
 
             # Handle Booleans (Flags)
             if isinstance(value, bool):
