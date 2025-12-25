@@ -1,410 +1,237 @@
 import argparse
 import json
+import pickle
+import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-import plotly.express as px
 import torch
 import yaml
-from plotly.subplots import make_subplots
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-from torch.nn import Module
 
-from src.engine.evaluator import Model, run_inference, top_sorted_dict
-from src.models.factory import get_model_components
-from src.utils.hashing import check_for_cache, compose_metadata
-from src.visualization.tools import bar_plot, prep_name_plotly
+from src.utils.hashing import check_cache, compose_metadata
+
+# Add project root to PATH
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
+
+from src.utils.paths import ProjectPaths
 from src.utils.io import save_csv_and_metadata
+from src.models.factory import get_model_components
+from src.engine.evaluator import ModelWrapper, run_inference
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--nets', '-n', nargs='*', default=['rnn'], help='Nets to test')
-    parser.add_argument('--cache_only_nets', nargs='*', default=[],
-                        help='Nets to load results from cache without checking')
-    parser.add_argument('--top', default=-1, type=int, help='Top N results to show for each net. Use -1 to show all')
-    parser.add_argument('--seq_len', default=10, type=int, help='Amount of consecutive processed points to use')
-    parser.add_argument('--ds', default='full', choices=['full', 'test'], help='Dataset to use')
-    parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint type to load models')
+    parser = argparse.ArgumentParser(description='Evaluation Runner')
+
+    parser.add_argument('--dataset', type=str, default='main', help='Dataset scope (e.g., main, boreal)')
+    parser.add_argument('--ds_path', type=str, default=None, help='Path to evaluation dataset')
+    parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
+                        help='Data subset to evaluate on')
+
+    parser.add_argument('--nets', nargs='+', default=['rnn'], help='List of networks to evaluate (e.g. rnn cnn)')
+    parser.add_argument('--cache_only_nets', nargs='+', default=[],
+                        help='List of networks to use cache straightforward without validation '
+                             '(helpful for nets that require different accelerator than yours, e.g. mamba runs on GPU only)')
+    parser.add_argument('--config_name', type=str, default='main', help='Name of the experiment YAML file')
+
+    parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint to load')
+    parser.add_argument('--batch_size', type=int, default=4096)
+
     return parser.parse_args()
 
 
 def main():
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
     args = parse_args()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f'--- Starting Evaluation on \'{args.dataset}/{args.subset}\' ---')
 
-    # Params
-    sequence_len = args.seq_len
-    target_col = 'surf'
+    # Load data config
+    ds_config_path = ProjectPaths.get_dataset_config_path(args.dataset)
+    with open(ds_config_path, 'r') as f:
+        ds_config = json.load(f)
 
-    # Load linear processed
-    ds_path = Path('processed/raw')
-    data_path = Path('processed/processed')
-    match args.ds:
-        case 'full':
-            df = pd.read_csv(ds_path / 'concat_noavg_kalman.csv')
-        case 'test':
-            df = pd.read_csv(data_path / 'test.csv')
-        case _:
-            raise ValueError(f'Unknown dataset: {args.ds}')
+    group_cols = ds_config['metadata']['group_cols']
+    info_cols = group_cols
+    target_col = ds_config['metadata']['target_col']
+    features_map = ds_config['features']
 
-    cache_path = Path('processed') / 'results' / 'evaluation' / args.ds
-    cache_path.mkdir(parents=True, exist_ok=True)
+    # Find dataset
+    if args.ds_path is not None:
+        csv_path = Path(args.ds_path)
+        args.subset = csv_path.stem
+    elif args.subset in ['test', 'val', 'train']:
+        data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
+        csv_path = data_dir / f'{args.subset}.csv'
+    elif args.subset == 'full':
+        data_dir = ProjectPaths.get_raw_data_dir()
+        csv_path = data_dir / f'{args.dataset}.csv'
+    else:
+        print(f'Error: no instruction passed to find evaluation dataset')
+        sys.exit(1)
 
-    # Labels
-    label_encoder = LabelEncoder()
-    df[target_col] = label_encoder.fit_transform(df[target_col])
-    num_classes = len(label_encoder.classes_)
+    if not csv_path.exists():
+        print(f'Error: Data file not found at {csv_path}')
+        sys.exit(1)
 
-    # Load memory cls results
-    df_mem_cls = pd.read_csv(ds_path / 'cls_mem_res.csv')
-    df_mem_cls['predictions'] = df_mem_cls['cls_memory']
-    res_df_mem = df_mem_cls.groupby(['surf', 'movedir'])[['surf', 'predictions']].apply(
-        lambda x: accuracy_score(x['surf'], x['predictions'])
-    ).reset_index(name='accuracy')
+    print(f'Loading data from {csv_path}...')
+    df = pd.read_csv(csv_path)
 
-    # Load models
-    features_path = data_path / 'features.json'
-    with open(features_path) as f:
-        ds_features = json.load(f)
+    # Define output directory
+    results_dir = ProjectPaths.get_evaluation_dir(args.dataset, args.subset)
+    results_dir.mkdir(parents=True, exist_ok=True)
 
-    # Ensure same nets' names order
+    # Ensure nets are in the same order
     nets = sorted(args.nets, key=len, reverse=True)
-    ckpt_type = args.ckpt_type
-    models: dict[str, Model] = {}
+    # Loop over nets
+    for net_name in nets:
+        # Load experiment config
+        exp_config_path = ProjectPaths.get_experiment_config_path(net_name, args.config_name)
+        if not exp_config_path.exists():
+            print(f'Skipping {net_name}: Config not found at {exp_config_path}')
+            continue
 
-    # Cache-only models
-    cache_only_nets = args.cache_only_nets
+        with open(exp_config_path, 'r') as f:
+            yaml_content = yaml.safe_load(f)
 
-    # Figure path
-    figure_prefix = "_".join(nets)
-    figure_path = Path('figures') / 'evaluation' / args.ds / figure_prefix
-    figure_path.mkdir(parents=True, exist_ok=True)
+        defaults = yaml_content.get('defaults', {})
+        experiments = yaml_content.get('experiments', [])
 
-    for net in nets:
-        exp_cfg_path = Path(f'python/{net}/configs/experiments.yaml')
-        with open(exp_cfg_path, 'r') as f:
-            experiments = yaml.safe_load(f)
+        print(f'\nEvaluating {len(experiments)} experiments for {net_name}:')
 
+        # Loop over experiments
         for exp in experiments:
-            print(f'Loading experiment {exp["name"]}')
-            temp_name = exp['name'].replace(net, '').strip('_')
-            cfg_path = Path(f'processed/params/{net}_optim/best_params_{temp_name}.json')
-            ckpt_path = Path('processed/runs') / exp['name'] / f'{ckpt_type}.pt'
+            exp_name = exp.get('name')
+            print(f'\nProcessing {exp_name}')
 
-            filter_type = exp['common']['filter']
-            ds_type = exp['common']['ds_type']
-            features = ds_features[filter_type][ds_type]
+            # Prepare experiment args
+            exp_args = defaults.get('common', {}).copy()
+            exp_args |= exp.get('common', {})
 
-            if net not in cache_only_nets:
-                # Hyperparams
-                input_dim = len(features)
+            filter_type = exp_args.get('filter', 'no_filter')
+            ds_type = exp_args.get('ds_type', 'type_1')
 
-                prep_cfg, prep_model = get_model_components(net)
+            # Identify features
+            try:
+                feature_cols = features_map[filter_type][ds_type]
+            except KeyError:
+                print(f'Error: Could not find features for {filter_type}/{ds_type} in dataset config.')
+                continue
 
-                cfg = prep_cfg(
-                    cfg_path,
-                    input_dim,
-                    num_classes,
-                    sequence_len
-                )
-                model = prep_model(**cfg['model']).to(device)
+            # Define output path
+            result_file = results_dir / f'{exp_name}.csv'
 
-                # load model
-                checkpoint = torch.load(ckpt_path, map_location=device)
-                model.load_state_dict(checkpoint['model_state_dict'])
-                _model = Model(
-                    net_type=net,
-                    filter_type=filter_type,
-                    dataset=ds_type,
-                    model=model,
-                    features=features,
-                )
+            # Skip for cache-only nets with existent results
+            if net_name in args.cache_only_nets:
+                if result_file.exists():
+                    print(f'\tSkipping {exp_name} (Cache Only Model)')
+                else:
+                    print(f'\tSkipping {exp_name} (Cache Only Model, No file found: {result_file})')
+                continue
+
+            # Checkpoint, scaler, label encoder
+            exp_dataset_scope = exp.get('dataset', defaults.get('dataset', args.dataset))
+            run_dir = ProjectPaths.get_run_dir(exp_dataset_scope, exp_name)
+
+            ckpt_path = run_dir / f'{args.ckpt_type}.pt'
+            scaler_path = run_dir / 'scaler.pkl'
+            label_encoder_path = run_dir / 'label_encoder.pkl'
+
+            if not ckpt_path.exists():
+                print(f'\tCheckpoint not found: {ckpt_path}. Skipping')
+                continue
+
+            # Load Scaler
+            if not scaler_path.exists():
+                print(f'\tScaler not found: {scaler_path}. Skipping')
+                continue
             else:
-                _model = Model(
-                    net_type=net,
-                    filter_type=filter_type,
-                    dataset=ds_type,
-                    model=Module(),
-                    features=features,
-                )
-            models[exp['name']] = _model
+                with open(scaler_path, 'rb') as f:
+                    scaler = pickle.load(f)
 
-    # Process processed
-    batch_size = 2 ** 12
+            # Load label encoder
+            if not label_encoder_path.exists():
+                print(f'\tLabelEncoder not found: {label_encoder_path}. Creating from existing dataset')
+                label_encoder = LabelEncoder()
+                label_encoder.fit(df[target_col])
+            else:
+                with open(label_encoder_path, 'r') as f:
+                    label_encoder = pickle.load(f)
 
-    group_cols = ['surf', 'movedir', 'speedamp']
-    info_cols = ['surf', 'movedir']
+            num_classes = len(label_encoder.classes_)
 
-    unscale_cols = ['movedir']
-    exps_to_unscale = [f'{n}_kalman_type_4' for n in nets]
+            # Resolve Params File
+            train_args = defaults.get('train', {}).copy()
+            train_args |= exp.get('train', {})
 
-    raw_results: dict[str, pd.DataFrame] = {}
 
-    for model_name, model_wrapper in models.items():
+            param_file = train_args.get('param_file')
+            if param_file:
+                cfg_path = Path(param_file)
+            else:
+                cfg_path = ProjectPaths.get_params_path(net_name, exp_dataset_scope, exp_name)
 
-        cache_info_path = cache_path / f'linear_{model_name}.csv'
-        cols_in_cache = info_cols + ['predictions']
-        use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
+            # Prepare config
+            seq_len = exp_args.get('seq_len', 10)
 
-        use_cache = use_cache or model_wrapper.net_type in cache_only_nets
+            # Create model
+            components = get_model_components(net_name)
+            ModelClass = components['class']
+            prep_cfg = components['prep_config']
 
-        if use_cache:
-            print(f'Using cached results for: linear – {model_name}')
-        else:
-            print(f'Calculating results for: linear – {model_name}')
-            info = run_inference(
-                model_name=model_name,
+            model_cfg = prep_cfg(
+                cfg_path,
+                input_dim=len(feature_cols),
+                num_classes=num_classes,
+                sequence_length=seq_len
+            )
+            model = ModelClass(**model_cfg['model_kwargs']).to(device)
+
+            # Load Weights
+            checkpoint = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+
+            # Check if there is a cached result for this model
+            is_cache_valid = check_cache(result_file.with_suffix('.json'), model, info_cols + ['prediction'])
+            if is_cache_valid:
+                print(f'\tSkipping {exp_name} (Cached)')
+                continue
+
+            # In case there is no cache, we have to calculate results
+            print(f'\tNo valid cache found. Evaluating...')
+
+            # Wrap model
+            model_wrapper = ModelWrapper(
+                name=exp_name,
+                model=model,
+                features=feature_cols,
+                net_type=net_name,
+                filter_type=filter_type,
+                dataset=ds_type
+            )
+
+            # Run inference
+
+            results_df = run_inference(
                 model_wrapper=model_wrapper,
                 df=df,
                 group_cols=group_cols,
                 target_col=target_col,
-                sequence_len=sequence_len,
+                feature_cols=feature_cols,
+                sequence_len=seq_len,
                 info_cols=info_cols,
+                scaler=scaler,
                 label_encoder=label_encoder,
                 device=device,
-                batch_size=batch_size,
-                exps_to_unscale=exps_to_unscale,
-                unscale_cols=unscale_cols
-            )
-            # Save cache
-            model_metadata = compose_metadata(model_wrapper.model, model_name, list(info.columns))
-            save_csv_and_metadata(
-                info,
-                model_metadata,
-                cache_info_path,
-                index=False
+                batch_size=args.batch_size
             )
 
-        raw_results[model_name] = info
+            # Save
+            metadata = compose_metadata(model, exp_name, list(results_df.columns))
+            save_csv_and_metadata(results_df, metadata, result_file, index=False)
+            print(f'\tSaved to {result_file}')
 
-    # Create accuracy summaries
-    acc_summaries: dict[str, pd.DataFrame] = {}
-    for model_name, raw_df in raw_results.items():
-        _res_df = raw_df.groupby(['surf', 'movedir'])[['surf', 'predictions']].apply(
-            lambda x: accuracy_score(x['surf'], x['predictions'])
-        ).reset_index(name='accuracy')
-        acc_summaries[model_name] = _res_df
-
-    # Order names by accuracy
-    names_by_accuracy: dict[str, float] = {
-        _n: accuracy_score(_df['surf'], _df['predictions']) for _n, _df in raw_results.items()
-    }
-    names_by_accuracy = dict(sorted(names_by_accuracy.items(), key=lambda item: item[1], reverse=True))
-
-    top_n = args.top
-    names_by_accuracy = top_sorted_dict(names_by_accuracy, top_n, nets)
-
-    # Radial plots
-    acc_summaries_pretty_names = {
-        prep_name_plotly(models[_n]): acc_summaries[_n] for _n in names_by_accuracy
-    }
-    res_dfs = {
-        'Mem': res_df_mem,
-        **acc_summaries_pretty_names,
-    }
-    surfs = ['gray', 'green', 'table', 'brown']
-    my_pal = {
-        'gray':  '#b6b6b6',
-        'green': '#4fc54c',
-        'table': '#9f6a4d',
-        'brown': '#ad3024'
-    }
-
-    rows = len(res_dfs)
-    cols = num_classes
-
-    fig = make_subplots(
-        cols=cols,
-        rows=rows,
-        subplot_titles=surfs,
-        row_titles=list(res_dfs.keys()),
-        horizontal_spacing=0.05,
-        vertical_spacing=min(0.055, 1 / (rows - 1)),
-        specs=[[{"type": "barpolar"} for _ in range(cols)] for _ in range(rows)],
-    )
-
-    for row_idx, (df_name, _df) in enumerate(res_dfs.items()):
-        for col_idx, surf in enumerate(surfs):
-            # Create a single figure for the specific df and surf
-            figure = px.bar_polar(
-                _df.query(f'surf == @surf'),
-                r='accuracy',
-                theta='movedir',
-                hover_data='surf',
-                direction='counterclockwise',
-                color_discrete_sequence=[my_pal[surf]]
-            )
-
-            # Add the traces from this single figure to the correct subplot
-            for trace in figure.data:
-                fig.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
-
-    ticks = np.arange(0, 360, 45)
-    polar = dict(
-        radialaxis=dict(showticklabels=False, range=(0, 1)),
-        angularaxis=dict(
-            tickvals=ticks,
-            ticktext=[f'{x}' for x in ticks],
-            direction='counterclockwise',
-            rotation=90,
-        )
-    )
-
-    polar_keys = []
-    for i in range(1, (rows * cols) + 1):
-        key = f'polar{i}' if i > 1 else 'polar'
-        polar_keys.append(key)
-
-    fig.update_layout(
-        {key: polar for key in polar_keys},
-        template='plotly_white',
-        height=250 * len(res_dfs),
-    )
-
-    # For HTML file
-    for annotation in fig.layout.annotations:
-        if annotation.text in surfs:
-            annotation.y += 0.02
-
-        elif annotation.text in res_dfs.keys():
-            annotation.x = -0.03
-            annotation.textangle = 0
-    fig.write_html(figure_path / f'{figure_prefix}_radial.html', include_plotlyjs='cdn')
-
-    # Bar plot mean accuracies
-    df_bar_mean_acc = pd.DataFrame(
-        {
-            'Mem': accuracy_score(df_mem_cls.surf, df_mem_cls.predictions),
-            **{prep_name_plotly(models[_n]): names_by_accuracy[_n] for _n in names_by_accuracy},
-        },
-        index=['accuracy']
-    ).T.reset_index(names=['Classifier'])
-    df_bar_mean_acc['is_mem'] = df_bar_mean_acc['Classifier'] == 'Mem'
-
-    fig = bar_plot(
-        df_bar_mean_acc,
-        threshold=10,
-        x='Classifier',
-        y='accuracy',
-        text='accuracy',
-        color='is_mem',
-        color_discrete_map={True: '#EF553B', False: '#636EFA'},
-        template='plotly_white',
-        range_y=[0, 1.01],
-        title='Linear Motion (Mean Accuracy)',
-
-    )
-    fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig.write_html(figure_path / f'{figure_prefix}_bar.html', include_plotlyjs='cdn')
-
-    # Process circle square processed
-    df_circle = pd.read_csv(ds_path / 'circle_kalman.csv')
-    df_square = pd.read_csv(ds_path / 'square_kalman.csv')
-
-    df_names = ('circle', 'square')
-    df_list = (df_circle, df_square)
-
-    dfs = dict(zip(df_names, df_list))
-
-    raw_names = []
-    raw_ds_types = []
-    raw_dfs = []
-    for df_name, _df in dfs.items():
-        if 'speedamp' not in _df.columns:
-            _df['speedamp'] = (_df['xsetspeed'].pow(2) + _df['ysetspeed'].pow(2)).pow(0.5).abs().round(3)
-
-        _df['group'] = 1
-
-        # Encode label
-        _df[target_col] = label_encoder.transform(_df[target_col])
-
-        for model_name, model_wrapper in models.items():
-            cache_info_path = cache_path / f'{df_name}_{model_name}.csv'
-            cols_in_cache = info_cols + ['predictions']
-            use_cache, info = check_for_cache(cache_info_path, model_wrapper.model, cols_in_cache)
-
-            use_cache = use_cache or model_wrapper.net_type in cache_only_nets
-
-            if use_cache:
-                print(f'Using cached results for: {df_name} – {model_name}')
-            else:
-                print(f'Calculating results for: {df_name} – {model_name}')
-                info = run_inference(
-                    model_name=model_name,
-                    model_wrapper=model_wrapper,
-                    df=_df,
-                    group_cols='group',
-                    target_col=target_col,
-                    sequence_len=sequence_len,
-                    info_cols=info_cols,
-                    label_encoder=label_encoder,
-                    device=device,
-                    batch_size=batch_size,
-                    exps_to_unscale=exps_to_unscale,
-                    unscale_cols=unscale_cols
-                )
-                # Save cache
-                model_metadata = compose_metadata(model_wrapper.model, model_name, list(info.columns))
-                save_csv_and_metadata(
-                    info,
-                    model_metadata,
-                    cache_info_path,
-                    index=False
-                )
-
-            raw_names.append(model_name)
-            raw_ds_types.append(df_name)
-            raw_dfs.append(info)
-
-    # Main acc dataframe
-    accuracies = pd.DataFrame(dict(
-        name=[prep_name_plotly(models[_n]) for _n in raw_names],
-        ds_type=raw_ds_types,
-        accuracy=[accuracy_score(_df['surf'], _df['predictions']) for _df in raw_dfs],
-    ))
-
-    # Add mem classifier's results
-    temp_df = pd.DataFrame(dict(
-        name=['Mem', 'Mem'],
-        ds_type=['circle', 'square'],
-        accuracy=[0.836631, 0.759980],
-    ))
-    accuracies = pd.concat([accuracies, temp_df])
-
-    # Cut top n for every method
-    _acc_dict = accuracies.groupby('name')['accuracy'].mean().sort_values(ascending=False).to_dict()
-    _names = list(set([k.split('<br>')[0] if '<br>' in k else k for k in _acc_dict.keys()]))
-    top_acc = top_sorted_dict(_acc_dict, top_n, _names)
-    accuracies = accuracies.query('name in @top_acc')
-
-    accuracies['mean_acc'] = accuracies.groupby('name')['accuracy'].transform('mean')
-
-    # Sort the DataFrame by mean_acc in descending order
-    accuracies_sorted = accuracies.sort_values('mean_acc', ascending=False)
-
-    # Bar plot for square circle
-    sorted_names = accuracies_sorted['name'].unique()
-    fig = bar_plot(
-        accuracies,
-        threshold=10,
-        scale=2,
-        x='name',
-        y='accuracy',
-        text='accuracy',
-        color='ds_type',
-        template='plotly_white',
-        barmode='group',
-        range_y=[0, 1.01],
-        category_orders={'name': list(sorted_names)},
-        title='Square and Circle Trajectories (Mean Accuracy)'
-    )
-    fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-
-    fig.write_html(figure_path / f'{figure_prefix}_bar_square_circle.html', include_plotlyjs='cdn')
+        print('\nEvaluation Complete')
 
 
 if __name__ == '__main__':
