@@ -7,6 +7,7 @@ def main():
     # Metadata
     metadata = {
         'group_cols':   ['surf', 'run_idx'],
+        'info_cols':   ['surf', 'run_idx'],
         'target_col':   'surf',
         'class_colors': {
             'asphalt':    '#2d2d2d',

@@ -51,7 +51,7 @@ def main():
         ds_config = json.load(f)
 
     group_cols = ds_config['metadata']['group_cols']
-    info_cols = group_cols
+    info_cols = ds_config['metadata']['info_cols']
     target_col = ds_config['metadata']['target_col']
     features_map = ds_config['features']
 

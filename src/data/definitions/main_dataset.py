@@ -5,7 +5,8 @@ from src.utils.paths import ProjectPaths
 
 def main():
     metadata = {
-        'group_cols':   ['surf', 'movedir', 'speedamp'],
+        'group_cols':   ['exp_idx'],
+        'info_cols':   ['surf', 'movedir', 'speedamp'],
         'target_col':   'surf',
         'class_colors': {
             'gray':  '#b6b6b6',
