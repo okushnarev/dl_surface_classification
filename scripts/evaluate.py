@@ -1,9 +1,9 @@
 import argparse
 import json
-import pickle
 import sys
 from pathlib import Path
 
+import joblib
 import pandas as pd
 import torch
 import yaml
@@ -134,8 +134,8 @@ def main():
             run_dir = ProjectPaths.get_run_dir(exp_dataset_scope, exp_name)
 
             ckpt_path = run_dir / f'{args.ckpt_type}.pt'
-            scaler_path = run_dir / 'scaler.pkl'
-            label_encoder_path = run_dir / 'label_encoder.pkl'
+            scaler_path = run_dir / 'scaler.joblib'
+            label_encoder_path = run_dir / 'label_encoder.joblib'
 
             if not ckpt_path.exists():
                 print(f'\tCheckpoint not found: {ckpt_path}. Skipping')
@@ -146,8 +146,7 @@ def main():
                 print(f'\tScaler not found: {scaler_path}. Skipping')
                 continue
             else:
-                with open(scaler_path, 'rb') as f:
-                    scaler = pickle.load(f)
+                scaler = joblib.load(scaler_path)
 
             # Load label encoder
             if not label_encoder_path.exists():
@@ -155,15 +154,13 @@ def main():
                 label_encoder = LabelEncoder()
                 label_encoder.fit(df[target_col])
             else:
-                with open(label_encoder_path, 'r') as f:
-                    label_encoder = pickle.load(f)
+                label_encoder = joblib.load(label_encoder_path)
 
             num_classes = len(label_encoder.classes_)
 
             # Resolve Params File
             train_args = defaults.get('train', {}).copy()
             train_args |= exp.get('train', {})
-
 
             param_file = train_args.get('param_file')
             if param_file:

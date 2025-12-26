@@ -1,9 +1,9 @@
 import argparse
 import json
-import pickle
 from datetime import datetime
 from pathlib import Path
 
+import joblib
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -75,10 +75,8 @@ def train_model(args):
     df_test[feature_cols] = scaler.transform(df_test[feature_cols])
 
     # Save scaler and label encoder
-    with open(ckpt_path / 'scaler.pkl', 'wb') as f:
-        pickle.dump(scaler, f)
-    with open(ckpt_path / 'label_encoder.pkl', 'wb') as f:
-        pickle.dump(label_encoder, f)
+    joblib.dump(scaler, ckpt_path / 'scaler.joblib')
+    joblib.dump(label_encoder, ckpt_path / 'label_encoder.joblib')
 
     # Create sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
