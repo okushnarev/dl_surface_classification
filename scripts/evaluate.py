@@ -9,12 +9,11 @@ import torch
 import yaml
 from sklearn.preprocessing import LabelEncoder
 
-from src.utils.hashing import check_cache, compose_metadata
-
 # Add project root to PATH
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
+from src.utils.hashing import check_cache, compose_metadata
 from src.utils.paths import ProjectPaths
 from src.utils.io import save_csv_and_metadata
 from src.models.factory import get_model_components
