@@ -15,7 +15,7 @@ from src.utils.paths import ProjectPaths
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='main')
-    parser.add_argument('--full_ds_name', type=str, default='concat_noavg_kalman')
+    parser.add_argument('--full_ds_name', type=str, default='main')
     parser.add_argument('--seed', type=int, default=69, help='Random seed')
     return parser.parse_args()
 
