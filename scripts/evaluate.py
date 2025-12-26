@@ -57,7 +57,7 @@ def main():
 
     # Find dataset
     if args.ds_path is not None:
-        csv_path = Path(args.ds_path)
+        csv_path = ProjectPaths.get_root() / args.ds_path
         args.subset = csv_path.stem
     elif args.subset in ['test', 'val', 'train']:
         data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
