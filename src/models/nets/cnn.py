@@ -93,8 +93,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
     cnn_channels = [2 ** trial.suggest_int(f'cnn_out_ch_{i}_pow', low=4, high=8) for i in range(cnn_n_layers)]
 
@@ -112,9 +110,6 @@ def get_optuna_params(trial):
     ]
 
     return dict(
-        model_kwargs=dict(
-            cnn_configs=cnn_configs,
-            mlp_configs=mlp_configs
-        ),
-        lr=lr
+        cnn_configs=cnn_configs,
+        mlp_configs=mlp_configs
     )

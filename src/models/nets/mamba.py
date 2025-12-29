@@ -99,8 +99,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=6, high=9)
 
     # Mamba config
@@ -122,10 +120,7 @@ def get_optuna_params(trial):
     ]
 
     return dict(
-        model_kwargs=dict(
-            encoder_layers=encoder_layers,
-            mamba_config=mamba_config,
-            embedding_dim=embedding_dim,
-        ),
-        lr=lr
+        encoder_layers=encoder_layers,
+        mamba_config=mamba_config,
+        embedding_dim=embedding_dim,
     )

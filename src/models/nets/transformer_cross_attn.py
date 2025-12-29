@@ -175,8 +175,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=4, high=8)
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
@@ -203,16 +201,12 @@ def get_optuna_params(trial):
     cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in cross_attn_dims]
 
     return dict(
-        model_kwargs=dict(
-            embedding_dim=embedding_dim,
-            encoder_layers=encoder_layers,
-            num_transformer_heads=num_transformer_heads,
-            num_transformer_layers=num_transformer_layers,
-            num_cross_attn_heads=num_cross_attn_heads,
-            num_cross_attn_layers=num_cross_attn_layers,
-            cross_attn_ffn_config=cross_attn_layers,
-            classification_layers=classification_layers,
-        ),
-        lr=lr
+        embedding_dim=embedding_dim,
+        encoder_layers=encoder_layers,
+        num_transformer_heads=num_transformer_heads,
+        num_transformer_layers=num_transformer_layers,
+        num_cross_attn_heads=num_cross_attn_heads,
+        num_cross_attn_layers=num_cross_attn_layers,
+        cross_attn_ffn_config=cross_attn_layers,
+        classification_layers=classification_layers,
     )
-

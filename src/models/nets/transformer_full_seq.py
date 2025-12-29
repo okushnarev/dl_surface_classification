@@ -106,8 +106,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    lr = trial.suggest_float('lr', low=1e-4, high=1e-2)
-
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=7)
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
@@ -122,12 +120,8 @@ def get_optuna_params(trial):
     ]
 
     return dict(
-        model_kwargs=dict(
-            embedding_dim=embedding_dim,
-            num_transformer_heads=num_transformer_heads,
-            num_transformer_layers=num_transformer_layers,
-            classification_layers=classification_layers,
-        ),
-        lr=lr
+        embedding_dim=embedding_dim,
+        num_transformer_heads=num_transformer_heads,
+        num_transformer_layers=num_transformer_layers,
+        classification_layers=classification_layers,
     )
-

@@ -80,10 +80,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     )
 
 
-
 def get_optuna_params(trial):
-    lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=6)
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
@@ -96,10 +93,7 @@ def get_optuna_params(trial):
     ]
 
     return dict(
-        model_kwargs=dict(
-            encoder_layers=encoder_layers,
-            embedding_dim=embedding_dim,
-            rnn_hidden_dim=rnn_hidden_dim,
-        ),
-        lr=lr
+        encoder_layers=encoder_layers,
+        embedding_dim=embedding_dim,
+        rnn_hidden_dim=rnn_hidden_dim,
     )

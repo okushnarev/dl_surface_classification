@@ -100,11 +100,11 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
     ModelClass = components['class']
     get_params_func = components['optuna_params']
 
-    # Generate hyperparameters from the search space
-    config = get_params_func(trial)
+    # General params
+    lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
 
     # Optuna model params
-    model_kwargs = config['model_kwargs']
+    model_kwargs = get_params_func(trial)
     # Check if the model accepts std_kwargs and update model_kwargs
     std_kwargs = dict(
         input_dim=input_dim,
@@ -130,7 +130,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
         train_loader=train_loader,
         val_loader=val_loader,
         epochs=epochs,
-        lr=config['lr'],
+        lr=lr,
         device=device
     )
 
