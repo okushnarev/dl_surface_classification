@@ -3,6 +3,7 @@ defaults:
   common:
     use_cuda: True
     batch_size: 32768
+    seq_len: 50
   train:
     epochs: 150
     num_workers: 2
