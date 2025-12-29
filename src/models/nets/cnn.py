@@ -61,8 +61,9 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             for idx in range(config['cnn_n_layers'])
         ]
 
+        dropout = config['dropout']
         mlp_configs = [
-            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=dropout)
             for idx in range(config['mlp_n_layers'])
         ]
 
@@ -75,8 +76,10 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             CNNLayerConfig(out_channels=32, kernel_size=3),
             CNNLayerConfig(out_channels=64, kernel_size=3),
         ]
+
+        dropout = 0.2
         mlp_configs = [
-            MLPLayerConfig(out_dim=64, dropout=0.2)
+            MLPLayerConfig(out_dim=64, dropout=dropout),
         ]
         start_lr = 1e-2
         weight_decay = 1e-2
@@ -97,6 +100,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
+    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
     cnn_channels = [2 ** trial.suggest_int(f'cnn_out_ch_{i}_pow', low=4, high=8) for i in range(cnn_n_layers)]
 
@@ -109,7 +114,7 @@ def get_optuna_params(trial):
     mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
     mlp_configs = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
+        MLPLayerConfig(out_dim=d, dropout=dropout)
         for d in mlp_dims
     ]
 

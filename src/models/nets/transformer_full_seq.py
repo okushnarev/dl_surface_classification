@@ -72,8 +72,9 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_transformer_heads = config['num_transformer_heads']
         num_transformer_layers = config['num_transformer_layers']
 
+        dropout = config['dropout']
         classification_layers = [
-            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=dropout)
             for idx in range(config['classification_n_layers'])
         ]
 
@@ -86,8 +87,9 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_transformer_heads = 1
         num_transformer_layers = 1
 
+        dropout = 0.2
         classification_layers = [
-            MLPLayerConfig(out_dim=32, dropout=0.2),
+            MLPLayerConfig(out_dim=32, dropout=dropout),
         ]
 
         start_lr = 1e-2
@@ -110,6 +112,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
+    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=7)
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
@@ -119,7 +123,7 @@ def get_optuna_params(trial):
                            range(classification_n_layers)]
 
     classification_layers = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
+        MLPLayerConfig(out_dim=d, dropout=dropout)
         for d in classification_dims
     ]
 

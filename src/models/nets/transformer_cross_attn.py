@@ -110,18 +110,19 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_cross_attn_heads = config['num_cross_attn_heads']
         num_cross_attn_layers = config['num_cross_attn_layers']
 
+        dropout = config['dropout']
         encoder_layers = [
-            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=dropout)
             for idx in range(config['encoder_n_layers'])
         ]
 
         classification_layers = [
-            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=dropout)
             for idx in range(config['classification_n_layers'])
         ]
 
         cross_attn_layers = [
-            MLPLayerConfig(out_dim=config[f'cross_attn_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'cross_attn_dim_{idx}'], dropout=dropout)
             for idx in range(config['cross_attn_n_layers'])
         ]
 
@@ -137,17 +138,18 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_cross_attn_heads = 1
         num_cross_attn_layers = 1
 
+        dropout = 0.2
         encoder_layers = [
-            MLPLayerConfig(out_dim=16, dropout=0.2),
-            MLPLayerConfig(out_dim=32, dropout=0.2),
+            MLPLayerConfig(out_dim=16, dropout=dropout),
+            MLPLayerConfig(out_dim=32, dropout=dropout),
         ]
 
         classification_layers = [
-            MLPLayerConfig(out_dim=32, dropout=0.2),
+            MLPLayerConfig(out_dim=32, dropout=dropout),
         ]
 
         cross_attn_layers = [
-            MLPLayerConfig(out_dim=embedding_dim * 2, dropout=0.2),
+            MLPLayerConfig(out_dim=embedding_dim * 2, dropout=dropout),
         ]
 
         start_lr = 1e-2
@@ -179,6 +181,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
+    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=4, high=8)
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
@@ -190,19 +194,19 @@ def get_optuna_params(trial):
     # Encoder Layers
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
     encoder_dims = [2 ** trial.suggest_int(f'encoder_dim_{i}_pow', low=4, high=8) for i in range(encoder_n_layers)]
-    encoder_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in encoder_dims]
+    encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
     # Classification Layers
     classification_n_layers = trial.suggest_int('classification_n_layers', 1, 4)
     classification_dims = [2 ** trial.suggest_int(f'classification_dim_{i}_pow', low=4, high=8) for i in
                            range(classification_n_layers)]
-    classification_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in classification_dims]
+    classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
     # Cross Attn FFN
     cross_attn_n_layers = trial.suggest_int('cross_attn_n_layers', 1, 4)
     cross_attn_dims = [2 ** trial.suggest_int(f'cross_attn_dim_{i}_pow', low=4, high=8) for i in
                        range(cross_attn_n_layers)]
-    cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=0.2) for d in cross_attn_dims]
+    cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in cross_attn_dims]
 
     return dict(
         embedding_dim=embedding_dim,

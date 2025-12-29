@@ -52,8 +52,9 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         embedding_dim = config['embedding_dim']
         rnn_hidden_dim = config['rnn_hidden_dim']
 
+        dropout = config['dropout']
         encoder_layers = [
-            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=0.2)
+            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=dropout)
             for idx in range(config['mlp_n_layers'])
         ]
 
@@ -62,9 +63,11 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
     else:
         # Defaults
         embedding_dim = 32
+
+        dropout = 0.2
         encoder_layers = [
-            MLPLayerConfig(out_dim=64, dropout=0.2),
-            MLPLayerConfig(out_dim=16, dropout=0.2),
+            MLPLayerConfig(out_dim=64, dropout=dropout),
+            MLPLayerConfig(out_dim=16, dropout=dropout),
         ]
         rnn_hidden_dim = 64
         start_lr = 1e-2
@@ -86,6 +89,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
+    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+
     embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=6)
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
@@ -93,7 +98,7 @@ def get_optuna_params(trial):
     mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
 
     encoder_layers = [
-        MLPLayerConfig(out_dim=d, dropout=0.2)
+        MLPLayerConfig(out_dim=d, dropout=dropout)
         for d in mlp_dims
     ]
 
