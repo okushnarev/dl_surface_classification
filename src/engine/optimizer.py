@@ -38,7 +38,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     return parent_parser
 
 
-def _execute_trial_loop(trial: Trial, model, data_loader, epochs, lr, device):
+def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, lr, device):
     """
     Internal execution loop specifically for Optuna trials
     Handles forward passes, backprop, pruning, and reporting
@@ -52,10 +52,9 @@ def _execute_trial_loop(trial: Trial, model, data_loader, epochs, lr, device):
 
     for epoch in range(epochs):
         model.train()
-        correct, total = 0, 0
         epoch_loss = np.inf
 
-        for sequences, labels in data_loader:
+        for sequences, labels in train_loader:
             sequences = sequences.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
@@ -67,15 +66,8 @@ def _execute_trial_loop(trial: Trial, model, data_loader, epochs, lr, device):
             loss.backward()
             optimizer.step()
 
-            predicted = torch.argmax(outputs.data, 1)
-            total += len(labels)
-            correct += (predicted == labels).sum().item()
-
-        epoch_loss /= len(data_loader)
+        epoch_loss /= len(train_loader)
         scheduler.step(epoch_loss)
-
-        accuracy = correct / total
-        trial.set_user_attr('accuracy', accuracy)
 
         trial.report(epoch_loss, epoch)
 
@@ -121,7 +113,7 @@ def generic_objective(trial, net_name, val_dataset, input_dim, num_classes, seq_
     accuracy = _execute_trial_loop(
         trial=trial,
         model=model,
-        data_loader=val_loader,
+        train_loader=val_loader,
         epochs=epochs,
         lr=config['lr'],
         device=device
