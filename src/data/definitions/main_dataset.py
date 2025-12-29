@@ -1,12 +1,14 @@
 import json
 
+from sympy.physics.units import energy
+
 from src.utils.paths import ProjectPaths
 
 
 def main():
     metadata = {
         'group_cols':   ['exp_idx'],
-        'info_cols':   ['surf', 'movedir', 'speedamp'],
+        'info_cols':    ['surf', 'movedir', 'speedamp'],
         'target_col':   'surf',
         'class_colors': {
             'gray':  '#b6b6b6',
@@ -21,20 +23,19 @@ def main():
         'no_filter': '',
         'kalman':    '_corr',
     }
+
     for filter, suffix in filters.items():
-        in_data = {
-            'type_1': [
-                f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}',
-                f'm1vel{suffix}', f'm2vel{suffix}', f'm3vel{suffix}',
-            ],
-            'type_2': [
-                f'rpower{suffix}', f'Ke1{suffix}',
-            ],
-        }
-        in_data['type_3'] = in_data['type_1'] + in_data['type_2']
-        if filter == 'kalman':
-            in_data['type_4'] = in_data['type_2'] + ['movedir']
-            in_data['type_5'] = ['movedir', 'speedamp', f'Ke1{suffix}']
+        in_data = dict()
+
+        in_data['type_1'] = [
+            f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}',
+            f'm1vel{suffix}', f'm2vel{suffix}', f'm3vel{suffix}',
+        ]
+
+        energy = [f'Ke1{suffix}']
+        in_data['type_2'] = in_data['type_1'] + energy
+        in_data['type_3'] = ['movedir'] + energy
+
         features[filter] = in_data
 
     output = dict(

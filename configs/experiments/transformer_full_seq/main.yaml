@@ -41,8 +41,3 @@ experiments:
     common:
       filter: no_filter
       ds_type: type_3
-
-  - name: transformer_full_seq_kalman_type_4
-    common:
-      filter: kalman
-      ds_type: type_4
