@@ -136,7 +136,7 @@ def train_model(args):
     )
 
     model = ModelClass(**cfg['model_kwargs']).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=cfg['optimizer']['start_lr'])
+    optimizer = optim.AdamW(model.parameters(), lr=cfg['optimizer']['start_lr'])
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
     criterion = nn.CrossEntropyLoss()
 
