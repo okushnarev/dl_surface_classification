@@ -48,36 +48,49 @@ def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, l
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
     criterion = nn.CrossEntropyLoss()
 
-    epoch_loss = np.inf
+    val_loss = np.inf
 
     for epoch in range(epochs):
+        # Training
         model.train()
-        epoch_loss = np.inf
-
+        train_loss = 0
         for sequences, labels in train_loader:
             sequences = sequences.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
             outputs = model(sequences)
             loss = criterion(outputs, labels)
-            epoch_loss += loss.item()
+            train_loss += loss.item()
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        train_loss /= len(train_loader)
+        scheduler.step(train_loss)
 
-        epoch_loss /= len(train_loader)
-        scheduler.step(epoch_loss)
+        # Validation
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for sequences, labels in val_loader:
+                sequences = sequences.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
 
-        trial.report(epoch_loss, epoch)
+                outputs = model(sequences)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
+
+        val_loss /= len(val_loader)
+        trial.report(val_loss, epoch)
 
         if trial.should_prune():
             raise optuna.TrialPruned()
 
-    return epoch_loss
+    return val_loss
 
 
-def generic_objective(trial, net_name, val_dataset, input_dim, num_classes, seq_len, batch_size, device, epochs):
+def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, num_classes, seq_len, batch_size, device,
+                      epochs):
     """
     The universal objective function used by Optuna
     Constructs the specific model using the Factory and runs the optimization loop
@@ -107,13 +120,15 @@ def generic_objective(trial, net_name, val_dataset, input_dim, num_classes, seq_
     model = ModelClass(**model_kwargs).to(device)
 
     # Create a DataLoader
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
     # Run the execution loop
     accuracy = _execute_trial_loop(
         trial=trial,
         model=model,
-        train_loader=val_loader,
+        train_loader=train_loader,
+        val_loader=val_loader,
         epochs=epochs,
         lr=config['lr'],
         device=device
@@ -129,6 +144,7 @@ def run_optimization(args):
 
     # Locate and load the validation data
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
+    df_train = pd.read_csv(data_dir / 'train.csv')
     df_val = pd.read_csv(data_dir / 'val.csv')
 
     # Load the dataset configuration to understand metadata and feature groups
@@ -142,19 +158,26 @@ def run_optimization(args):
 
     # Encode labels
     label_encoder = LabelEncoder()
-    df_val[target_col] = label_encoder.fit_transform(df_val[target_col])
+    df_train[target_col] = label_encoder.fit_transform(df_train[target_col])
+    df_val[target_col] = label_encoder.transform(df_val[target_col])
     num_classes = len(label_encoder.classes_)
     print(f'Classes: {label_encoder.classes_}')
 
     # Scale features using standard scaler
     scaler = StandardScaler()
-    df_val[feature_cols] = scaler.fit_transform(df_val[feature_cols])
+    df_train[feature_cols] = scaler.fit_transform(df_train[feature_cols])
+    df_val[feature_cols] = scaler.transform(df_val[feature_cols])
 
     # Generate sequences for the model
+    X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
     X_val, y_val = create_sequences(df_val, group_cols, feature_cols, target_col, args.seq_len)
-    print(f'Created {len(X_val)} sequences for optimization.')
+    print(f'Created {len(X_train)} train and {len(X_val)} val sequences for optimization.')
 
     # Convert to PyTorch TensorDataset
+    train_dataset = TensorDataset(
+        torch.tensor(X_train, dtype=torch.float32),
+        torch.tensor(y_train, dtype=torch.long)
+    )
     val_dataset = TensorDataset(
         torch.tensor(X_val, dtype=torch.float32),
         torch.tensor(y_val, dtype=torch.long)
@@ -172,6 +195,7 @@ def run_optimization(args):
         partial(
             generic_objective,
             net_name=args.nn_name,
+            train_dataset=train_dataset,
             val_dataset=val_dataset,
             input_dim=len(feature_cols),
             num_classes=num_classes,
