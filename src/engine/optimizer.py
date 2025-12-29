@@ -4,10 +4,12 @@ import json
 from functools import partial
 from pathlib import Path
 
+import numpy as np
 import optuna
 import pandas as pd
 import torch
 import torch.nn as nn
+from optuna import Trial
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -36,7 +38,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     return parent_parser
 
 
-def _execute_trial_loop(trial, model, data_loader, epochs, lr, device):
+def _execute_trial_loop(trial: Trial, model, data_loader, epochs, lr, device):
     """
     Internal execution loop specifically for Optuna trials
     Handles forward passes, backprop, pruning, and reporting
@@ -46,12 +48,12 @@ def _execute_trial_loop(trial, model, data_loader, epochs, lr, device):
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
     criterion = nn.CrossEntropyLoss()
 
-    accuracy = 0.0
+    epoch_loss = np.inf
 
     for epoch in range(epochs):
         model.train()
         correct, total = 0, 0
-        epoch_loss = 0
+        epoch_loss = np.inf
 
         for sequences, labels in data_loader:
             sequences = sequences.to(device, non_blocking=True)
@@ -73,13 +75,14 @@ def _execute_trial_loop(trial, model, data_loader, epochs, lr, device):
         scheduler.step(epoch_loss)
 
         accuracy = correct / total
+        trial.set_user_attr('accuracy', accuracy)
 
-        trial.report(accuracy, epoch)
+        trial.report(epoch_loss, epoch)
 
         if trial.should_prune():
             raise optuna.TrialPruned()
 
-    return accuracy
+    return epoch_loss
 
 
 def generic_objective(trial, net_name, val_dataset, input_dim, num_classes, seq_len, batch_size, device, epochs):
