@@ -173,6 +173,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ),
         optimizer=dict(
             start_lr=start_lr,
+            weight_decay=weight_decay,
         )
     )
 
