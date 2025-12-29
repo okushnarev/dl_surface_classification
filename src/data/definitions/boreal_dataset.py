@@ -27,8 +27,8 @@ def main():
         in_data = dict()
 
         in_data['type_1'] = [
-            f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}',
-            f'm1vel{suffix}', f'm2vel{suffix}', f'm3vel{suffix}',
+            f'curL{suffix}', f'curR{suffix}',
+            f'velL{suffix}', f'velR{suffix}',
         ]
 
         energy = [f'Ke1{suffix}']
@@ -36,7 +36,7 @@ def main():
         in_data['type_3'] = ['movedir'] + energy
 
         imu = ['wx', 'wy', 'wz', 'ax', 'ay', 'az']
-        in_data['type_4'] = [f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}'] + imu
+        in_data['type_4'] = [f'curL{suffix}', f'curR{suffix}'] + imu
         in_data['type_5'] = in_data['type_1'] + imu
         in_data['type_6'] = in_data['type_2'] + imu
 
