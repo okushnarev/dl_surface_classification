@@ -124,7 +124,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
     # Run the execution loop
-    accuracy = _execute_trial_loop(
+    loss = _execute_trial_loop(
         trial=trial,
         model=model,
         train_loader=train_loader,
@@ -134,7 +134,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
         device=device
     )
 
-    return accuracy
+    return loss
 
 
 def run_optimization(args):
@@ -185,7 +185,7 @@ def run_optimization(args):
 
     # Initialize and run the Optuna study
     study = optuna.create_study(
-        direction='maximize',
+        direction='minimize',
         pruner=optuna.pruners.HyperbandPruner(
             min_resource=5,
         )
@@ -210,7 +210,7 @@ def run_optimization(args):
 
     # Process results from the best trial
     trial = study.best_trial
-    print(f'Best trial: #{trial.number} | Accuracy: {trial.value}')
+    print(f'Best trial: #{trial.number} | Loss: {trial.value}')
 
     # Convert power-of-2 parameters (suffix _pow) to their actual values
     best_params_processed = {}
@@ -226,7 +226,7 @@ def run_optimization(args):
     # Prepare result dictionary
     res = {
         'params':   best_params_processed,
-        'accuracy': trial.value,
+        'loss': trial.value,
     }
 
     # Save path
