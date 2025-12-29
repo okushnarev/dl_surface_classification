@@ -7,7 +7,7 @@ def main():
     # Metadata
     metadata = {
         'group_cols':   ['surf', 'run_idx'],
-        'info_cols':   ['surf', 'run_idx'],
+        'info_cols':    ['surf', 'run_idx'],
         'target_col':   'surf',
         'class_colors': {
             'asphalt':    '#2d2d2d',
@@ -24,23 +24,21 @@ def main():
         'no_filter': '',
     }
     for filter, suffix in filters.items():
-        in_data = {
-            'type_1': [
-                f'curL{suffix}', f'curR{suffix}',
-                f'velL{suffix}', f'velR{suffix}',
-            ],
-            'type_2': [
-                f'Ke1{suffix}',
-            ],
-        }
-        in_data['type_3'] = in_data['type_1'] + in_data['type_2']
-        in_data['type_4'] = in_data['type_2'] + ['movedir']
-        in_data['type_5'] = ['movedir', 'speedamp', f'Ke1{suffix}']
-        in_data['type_6'] = in_data['type_3'] + ['wx', 'wy', 'wz', 'ax', 'ay', 'az', ]  # IMU and Power data
-        in_data['type_7'] = [f'velL{suffix}', f'velR{suffix}', 'wx', 'wy', 'wz', 'ax', 'ay',
-                             'az']  # IMU + velocities only
-        in_data['type_8'] = in_data['type_1'] + ['wx', 'wy', 'wz', 'ax', 'ay', 'az']  # Original feature set
-        in_data['type_9'] = [f'velL{suffix}', f'velR{suffix}', f'Ke1{suffix}']
+        in_data = dict()
+
+        in_data['type_1'] = [
+            f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}',
+            f'm1vel{suffix}', f'm2vel{suffix}', f'm3vel{suffix}',
+        ]
+
+        energy = [f'Ke1{suffix}']
+        in_data['type_2'] = in_data['type_1'] + energy
+        in_data['type_3'] = ['movedir'] + energy
+
+        imu = ['wx', 'wy', 'wz', 'ax', 'ay', 'az']
+        in_data['type_4'] = [f'm1cur{suffix}', f'm2cur{suffix}', f'm3cur{suffix}'] + imu
+        in_data['type_5'] = in_data['type_1'] + imu
+        in_data['type_6'] = in_data['type_2'] + imu
 
         features[filter] = in_data
 

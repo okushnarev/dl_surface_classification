@@ -1,0 +1,43 @@
+defaults:
+  dataset: boreal
+  common:
+    use_cuda: True
+    batch_size: 32768
+  train:
+    epochs: 150
+    num_workers: 2
+  optimization:
+    n_trials: 50
+    epochs: 15
+    n_jobs: 1
+
+experiments:
+  - name: mamba_no_filter_type_1
+    common:
+      filter: no_filter
+      ds_type: type_1
+
+  - name: mamba_no_filter_type_2
+    common:
+      filter: no_filter
+      ds_type: type_2
+
+  - name: mamba_no_filter_type_3
+    common:
+      filter: no_filter
+      ds_type: type_3
+
+  - name: mamba_no_filter_type_4
+    common:
+      filter: no_filter
+      ds_type: type_4
+
+  - name: mamba_no_filter_type_5
+    common:
+      filter: no_filter
+      ds_type: type_5
+
+  - name: mamba_no_filter_type_6
+    common:
+      filter: no_filter
+      ds_type: type_6
