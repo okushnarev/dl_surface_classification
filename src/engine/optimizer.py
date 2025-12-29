@@ -166,7 +166,12 @@ def run_optimization(args):
     )
 
     # Initialize and run the Optuna study
-    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
+    study = optuna.create_study(
+        direction='maximize',
+        pruner=optuna.pruners.HyperbandPruner(
+            min_resource=5,
+        )
+    )
 
     study.optimize(
         partial(
