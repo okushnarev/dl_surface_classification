@@ -227,8 +227,8 @@ def run_optimization(args):
 
     # Prepare result dictionary
     res = {
-        'params':   best_params_processed,
-        'loss': trial.value,
+        'params': best_params_processed,
+        'loss':   trial.value,
     }
 
     # Save path
