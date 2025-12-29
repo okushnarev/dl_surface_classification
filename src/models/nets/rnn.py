@@ -58,6 +58,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ]
 
         start_lr = config['lr']
+        weight_decay = config['weight_decay']
     else:
         # Defaults
         embedding_dim = 32
@@ -67,6 +68,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ]
         rnn_hidden_dim = 64
         start_lr = 1e-2
+        weight_decay = 1e-2
 
     return dict(
         model_kwargs=dict(
@@ -76,7 +78,10 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             rnn_hidden_dim=rnn_hidden_dim,
             num_classes=num_classes,
         ),
-        optimizer=dict(start_lr=start_lr)
+        optimizer=dict(
+            start_lr=start_lr,
+            weight_decay=weight_decay,
+        )
     )
 
 

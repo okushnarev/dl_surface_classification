@@ -38,13 +38,13 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     return parent_parser
 
 
-def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, lr, device):
+def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, lr, weight_decay, device):
     """
     Internal execution loop specifically for Optuna trials
     Handles forward passes, backprop, pruning, and reporting
     Does not save checkpoints or logs to disk to maximize speed
     """
-    optimizer = AdamW(model.parameters(), lr=lr)
+    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
     criterion = nn.CrossEntropyLoss()
 
@@ -102,6 +102,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
     # General params
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
+    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
 
     # Optuna model params
     model_kwargs = get_params_func(trial)
@@ -131,6 +132,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
         val_loader=val_loader,
         epochs=epochs,
         lr=lr,
+        weight_decay=weight_decay,
         device=device
     )
 

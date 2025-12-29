@@ -73,6 +73,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ]
 
         start_lr = config['lr']
+        weight_decay = config['weight_decay']
     else:
         # Defaluts
         embedding_dim = 32
@@ -89,6 +90,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ]
 
         start_lr = 1e-2
+        weight_decay = 1e-2
 
     return dict(
         model=dict(
@@ -102,6 +104,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         ),
         optimizer=dict(
             start_lr=start_lr,
+            weight_decay=weight_decay,
         )
     )
 
