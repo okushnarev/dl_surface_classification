@@ -17,6 +17,53 @@ class MLPLayerConfig(BaseModel):
     dropout: float = 0.0
 
 
+def build_funnel_dims(initial_dim: int, n_steps: int, factor: float = 1, silent=False) -> list[int]:
+    """
+    Generates a sequence of dimensions creating a funnel shape
+
+    This utility is useful for defining architecture depths, such as the number
+    of units in MLP layers or channel counts in CNN blocks. The sequence begins
+    with ``initial_dim`` and applies the ``factor`` iteratively for ``n_steps``
+
+    :param int initial_dim: The starting dimension size
+    :param int n_steps: The total number of dimensions to generate, including
+       the initial dimension
+    :param float factor: The scaling factor applied at each step. Values < 1.0
+       contract the dimensions, while values > 1.0 expand them.
+       Defaults to 1
+    :param bool silent: If ``True``, suppresses the ``ValueError`` when a
+       dimension drops below 1, returning the partial list generated up to
+       that point. Defaults to ``False``
+
+    :return: A list of integers representing the calculated dimensions
+    :rtype: list[int]
+
+    :raises ValueError: If a calculated dimension becomes less than 1 and
+       ``silent`` is ``False``
+
+    :Example:
+
+    >>> build_funnel_dims(100, 3, 0.5)
+    [100, 50, 25]
+
+    >>> build_funnel_dims(10, 3, 2.0)
+    [10, 20, 40]
+    """
+    output = []
+
+    current_dim: int = initial_dim
+    for idx in range(n_steps):
+        if current_dim < 1:
+            if silent:
+                return output
+            else:
+                raise ValueError(f'Cannot create dimension less than 1: {current_dim=}')
+        output.append(current_dim)
+        current_dim = int(current_dim * factor)
+
+    return output
+
+
 def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_steps: int) -> tuple[nn.Module, int, int]:
     structure = []
     current_channels = input_dim
