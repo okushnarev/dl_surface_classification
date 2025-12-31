@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import torch.nn as nn
 
-from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
 
 
 class TabularRNN(nn.Module):
@@ -49,13 +50,25 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
-        embedding_dim = config['embedding_dim']
+        dropout = config.get('dropout', 0.2)
         rnn_hidden_dim = config['rnn_hidden_dim']
 
-        dropout = config['dropout']
+        mlp_n_layers = config['mlp_n_layers']
+        embedding_dim = config['embedding_dim']
+
+        if 'mlp_initial_dim' in config:
+            # New funnel approach
+            mlp_initial_dim = config['mlp_initial_dim']
+            mlp_expand_factor = config['mlp_expand_factor']
+
+            mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
+        else:
+            # Backward compatibility
+            mlp_dims = [config[f'mlp_dim_{idx}'] for idx in range(mlp_n_layers)]
+
         encoder_layers = [
-            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=dropout)
-            for idx in range(config['mlp_n_layers'])
+            MLPLayerConfig(out_dim=d, dropout=dropout)
+            for d in mlp_dims
         ]
 
         start_lr = config['lr']
@@ -91,11 +104,17 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 def get_optuna_params(trial):
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
 
-    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=2, high=8)
-    rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=6)
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
+    mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=2, high=5)
+    mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=0, high=2)
+    mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
 
-    mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
+    # Embedding dim with constraints
+    max_embedding_dim_pow = np.log2(mlp_dims[-1])
+    min_embedding_dim_pow = min(4, max_embedding_dim_pow)
+    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=min_embedding_dim_pow, high=max_embedding_dim_pow)
+
+    rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=8)
 
     encoder_layers = [
         MLPLayerConfig(out_dim=d, dropout=dropout)
