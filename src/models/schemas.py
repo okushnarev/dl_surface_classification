@@ -66,6 +66,7 @@ def build_funnel_dims(initial_dim: int, n_steps: int, factor: float = 1, silent=
 
 def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_steps: int) -> tuple[nn.Module, int, int]:
     structure = []
+
     current_channels = input_dim
     current_num_steps = num_steps
 
@@ -88,6 +89,7 @@ def build_cnn_from_config(configs: list[CNNLayerConfig], input_dim: int, num_ste
         current_channels = config.out_channels
 
     return nn.Sequential(*structure), current_channels, current_num_steps
+
 
 def build_mlp_from_config(configs: list[MLPLayerConfig], input_dim: int, output_dim: int) -> nn.Module:
     structure = []
