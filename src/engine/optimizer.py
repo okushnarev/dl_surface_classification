@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from optuna import Trial
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -144,11 +145,6 @@ def run_optimization(args):
     print(f'Starting Optimization for {args.nn_name} on {args.dataset}')
     print(f'Device: {device.upper()}')
 
-    # Locate and load the validation data
-    data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
-    df_train = pd.read_csv(data_dir / 'train.csv')
-    df_val = pd.read_csv(data_dir / 'val.csv')
-
     # Load the dataset configuration to understand metadata and feature groups
     with open(ProjectPaths.get_dataset_config_path(args.dataset), 'r') as f:
         dataset_config = json.load(f)
@@ -157,6 +153,22 @@ def run_optimization(args):
     group_cols = dataset_config['metadata']['group_cols']
     target_col = dataset_config['metadata']['target_col']
     feature_cols = dataset_config['features'][args.filter][args.ds_type]
+
+    # Locate and load the validation data
+    data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
+    # Treat val dataset as a proxy dataset since it is of a big size
+    proxy_df = pd.read_csv(data_dir / 'val.csv')
+
+    df_train, df_val = train_test_split(
+        proxy_df,
+        test_size=0.2,
+        random_state=69,
+        shuffle=True,
+        stratify=proxy_df[target_col],
+    )
+
+    df_train = df_train.sort_index()
+    df_val = df_val.sort_index()
 
     # Encode labels
     label_encoder = LabelEncoder()
