@@ -202,6 +202,7 @@ def run_optimization(args):
         direction='minimize',
         pruner=optuna.pruners.HyperbandPruner(
             min_resource=5,
+            max_resource=args.epochs,
         )
     )
 
