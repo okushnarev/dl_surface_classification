@@ -221,6 +221,7 @@ def run_optimization(args):
         ),
         n_trials=args.n_trials,
         n_jobs=args.n_jobs,
+        gc_after_trial=True,
     )
 
     # Process results from the best trial
