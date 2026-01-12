@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import numpy as np
 import torch.nn as nn
 
 from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
