@@ -53,18 +53,17 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         dropout = config.get('dropout', 0.2)
         rnn_hidden_dim = config['rnn_hidden_dim']
 
-        mlp_n_layers = config['mlp_n_layers']
-
-        if 'mlp_initial_dim' in config:
+        encoder_n_layers = config['encoder_n_layers']
+        if 'encoder_initial_dim' in config:
             # New funnel approach
-            mlp_initial_dim = config['mlp_initial_dim']
-            mlp_expand_factor = config['mlp_expand_factor']
+            encoder_initial_dim = config['encoder_initial_dim']
+            encoder_expand_factor = config['encoder_expand_factor']
 
-            mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
+            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
             embedding_dim = encoder_dims[-1]
         else:
             # Backward compatibility
-            mlp_dims = [config[f'mlp_dim_{idx}'] for idx in range(mlp_n_layers)]
+            encoder_dims = [config[f'mlp_dim_{idx}'] for idx in range(encoder_n_layers)]
             embedding_dim = config['embedding_dim']
 
         encoder_layers = [
@@ -105,10 +104,11 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 def get_optuna_params(trial):
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
 
-    mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
-    mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=2, high=5)
-    mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=0, high=2)
-    mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
+    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+    encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
     # Embedding dim
     embedding_dim = encoder_dims[-1]
