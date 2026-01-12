@@ -41,7 +41,8 @@ def train_model(args):
     # Setup
     torch.multiprocessing.set_start_method('spawn', force=True)
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
-    print(f'Using device: {device.upper()}')
+    device = torch.device(device)
+    print(f'Using device: {device.type.upper()}')
 
     # Paths
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)

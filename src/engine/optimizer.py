@@ -142,8 +142,9 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
 def run_optimization(args):
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
+    device = torch.device(device)
     print(f'Starting Optimization for {args.nn_name} on {args.dataset}')
-    print(f'Device: {device.upper()}')
+    print(f'Device: {device.type.upper()}')
 
     # Load the dataset configuration to understand metadata and feature groups
     with open(ProjectPaths.get_dataset_config_path(args.dataset), 'r') as f:
