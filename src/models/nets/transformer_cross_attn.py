@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from pydantic import BaseModel
 
-from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
 from src.modules.cross_attention import CrossAttention, CrossAttentionLayer
 
 
@@ -103,7 +103,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
-        embedding_dim = config['embedding_dim']
         num_transformer_heads = config['num_transformer_heads']
         num_transformer_layers = config['num_transformer_layers']
 
@@ -111,20 +110,51 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_cross_attn_layers = config['num_cross_attn_layers']
 
         dropout = config['dropout']
-        encoder_layers = [
-            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=dropout)
-            for idx in range(config['encoder_n_layers'])
-        ]
+        # Encoder
+        encoder_n_layers = config['encoder_n_layers']
+        if 'encoder_initial_dim' in config:
+            # New funnel approach
+            encoder_initial_dim = config['encoder_initial_dim']
+            encoder_expand_factor = config['encoder_expand_factor']
 
-        classification_layers = [
-            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=dropout)
-            for idx in range(config['classification_n_layers'])
-        ]
+            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, silent=True)
+            embedding_dim = encoder_dims[-1]
+        else:
+            # Backward compatibility
+            encoder_dims = [config[f'encoder_dim_{idx}'] for idx in range(encoder_n_layers)]
+            embedding_dim = config['embedding_dim']
 
-        cross_attn_layers = [
-            MLPLayerConfig(out_dim=config[f'cross_attn_dim_{idx}'], dropout=dropout)
-            for idx in range(config['cross_attn_n_layers'])
-        ]
+        encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
+
+        # Classifier
+        classification_n_layers = config['classification_n_layers']
+        if 'classification_initial_dim' in config:
+            # New funnel approach
+            classification_initial_dim = config['classification_initial_dim']
+            classification_expand_factor = config['classification_expand_factor']
+
+            classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                                    classification_expand_factor)
+        else:
+            # Backward compatibility
+            classification_dims = [config[f'classification_dim_{idx}'] for idx in range(classification_n_layers)]
+
+        classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
+
+        # Cross-Attention FFN
+        cross_attn_n_layers = config['cross_attn_n_layers']
+        if 'cross_attn_initial_dim' in config:
+            # New funnel approach
+            cross_attn_initial_dim = config['cross_attn_initial_dim']
+            cross_attn_expand_factor = config['cross_attn_expand_factor']
+
+            cross_attn_dims = build_funnel_dims(cross_attn_initial_dim, cross_attn_n_layers,
+                                                    cross_attn_expand_factor)
+        else:
+            # Backward compatibility
+            cross_attn_dims = [config[f'cross_attn_dim_{idx}'] for idx in range(cross_attn_n_layers)]
+
+        cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in cross_attn_dims]
 
         start_lr = config['lr']
         weight_decay = config['weight_decay']
@@ -191,21 +221,29 @@ def get_optuna_params(trial):
     num_cross_attn_heads = 2 ** trial.suggest_int('num_cross_attn_heads_pow', low=0, high=2)
     num_cross_attn_layers = trial.suggest_int('num_cross_attn_layers', low=1, high=4)
 
-    # Encoder Layers
+    # Encoder Head
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
-    encoder_dims = [2 ** trial.suggest_int(f'encoder_dim_{i}_pow', low=4, high=8) for i in range(encoder_n_layers)]
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
     encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
+
+    # Embedding dim
+    embedding_dim = encoder_dims[-1]
 
     # Classification Layers
     classification_n_layers = trial.suggest_int('classification_n_layers', 1, 4)
-    classification_dims = [2 ** trial.suggest_int(f'classification_dim_{i}_pow', low=4, high=8) for i in
-                           range(classification_n_layers)]
+    classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=6, high=10)
+    classification_expand_factor = 2 ** trial.suggest_int('classification_expand_factor_pow', low=-2, high=0)
+    classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                            classification_expand_factor, silent=True)
     classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
     # Cross Attn FFN
     cross_attn_n_layers = trial.suggest_int('cross_attn_n_layers', 1, 4)
-    cross_attn_dims = [2 ** trial.suggest_int(f'cross_attn_dim_{i}_pow', low=4, high=8) for i in
-                       range(cross_attn_n_layers)]
+    cross_attn_initial_dim = 2 ** trial.suggest_int('cross_attn_initial_dim_pow', low=5, high=10)
+    cross_attn_expand_factor = 2 ** trial.suggest_int('cross_attn_expand_factor_pow', low=0, high=0)
+    cross_attn_dims = build_funnel_dims(cross_attn_initial_dim, cross_attn_n_layers, cross_attn_expand_factor)
     cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in cross_attn_dims]
 
     return dict(
