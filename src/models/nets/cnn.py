@@ -127,7 +127,7 @@ def get_optuna_params(trial):
     cnn_configs = [CNNLayerConfig(out_channels=ch, kernel_size=3) for ch in cnn_channels]
 
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
-    mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=2, high=5)
+    mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=6, high=10)
     mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=-2, high=0)
     mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor, silent=True)
 
