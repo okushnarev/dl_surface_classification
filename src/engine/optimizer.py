@@ -90,7 +90,7 @@ def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, l
     return val_loss
 
 
-def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, num_classes, seq_len, batch_size, device,
+def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, num_classes, sequence_length, batch_size, device,
                       epochs):
     """
     The universal objective function used by Optuna
@@ -111,7 +111,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
     std_kwargs = dict(
         input_dim=input_dim,
         num_classes=num_classes,
-        seq_len=seq_len,
+        sequence_length=sequence_length,
     )
     model_signature = inspect.signature(ModelClass.__init__)
     for k, v in std_kwargs.items():
@@ -214,7 +214,7 @@ def run_optimization(args):
             val_dataset=val_dataset,
             input_dim=len(feature_cols),
             num_classes=num_classes,
-            seq_len=args.seq_len,
+            sequence_length=args.seq_len,
             batch_size=args.batch_size,
             device=device,
             epochs=args.epochs
