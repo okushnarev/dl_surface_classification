@@ -87,7 +87,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         weight_decay = 1e-2
 
     return dict(
-        model_kwargs=dict(
+        model=dict(
             input_dim=input_dim,
             encoder_layers=encoder_layers,
             embedding_dim=embedding_dim,

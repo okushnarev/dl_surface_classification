@@ -135,7 +135,7 @@ def train_model(args):
         sequence_length=args.seq_len
     )
 
-    model = ModelClass(**cfg['model_kwargs']).to(device)
+    model = ModelClass(**cfg['model']).to(device)
     optimizer = optim.AdamW(
         model.parameters(),
         lr=cfg['optimizer']['start_lr'],
