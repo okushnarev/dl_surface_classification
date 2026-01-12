@@ -201,7 +201,7 @@ def run_optimization(args):
     study = optuna.create_study(
         direction='minimize',
         pruner=optuna.pruners.HyperbandPruner(
-            min_resource=5,
+            min_resource=1,
             max_resource=args.epochs,
         )
     )
