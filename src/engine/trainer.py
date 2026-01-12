@@ -98,7 +98,7 @@ def train_model(args):
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        pin_memory=True,
+        pin_memory=False if device == torch.device('cpu') else True,
         num_workers=args.num_workers,
     )
 

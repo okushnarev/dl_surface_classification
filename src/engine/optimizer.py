@@ -122,8 +122,9 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
     model = ModelClass(**model_kwargs).to(device)
 
     # Create a DataLoader
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
+    pin_memory = False if device == torch.device('cpu') else True
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
 
     # Run the execution loop
     loss = _execute_trial_loop(
