@@ -45,6 +45,7 @@ class CNN(nn.Module):
         self.classifier = build_mlp_from_config(mlp_configs, flattened_size, num_classes)
 
     def forward(self, x):
+        x = x.permute(0, 2, 1)
         features = self.cnn_feature_extractor(x)
         flat_features = self.flatten(features)
         output = self.classifier(flat_features)
