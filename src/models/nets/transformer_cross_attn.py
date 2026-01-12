@@ -63,9 +63,9 @@ class TransformerCrossAttn(nn.Module):
         )
 
         cross_attn_layer = CrossAttentionLayer(
-            self.embedding_dim,
-            config.num_cross_attn_heads,
-            config.cross_attn_ffn_config,
+            embed_dim=self.embedding_dim,
+            num_heads=config.num_cross_attn_heads,
+            ff_config=config.cross_attn_ffn_config,
             dropout=0.2
         )
         self.cross_attn = CrossAttention(
