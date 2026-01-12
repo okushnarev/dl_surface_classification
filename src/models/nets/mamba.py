@@ -6,7 +6,8 @@ from mamba_ssm import Mamba2
 from pydantic import BaseModel
 from torch import Tensor, nn
 
-from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from eval_rnn import embedding_dim
+from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
 
 
 class MambaConfig(BaseModel):
@@ -55,8 +56,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
-        embedding_dim = config['embedding_dim']
-
         # Mamba params
         d_state = config['d_state']
         headdim = config['headdim']
@@ -66,10 +65,20 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         )
 
         dropout = config['dropout']
-        encoder_layers = [
-            MLPLayerConfig(out_dim=config[f'encoder_dim_{idx}'], dropout=dropout)
-            for idx in range(config['encoder_n_layers'])
-        ]
+        encoder_n_layers = config['encoder_n_layers']
+        if 'encoder_initial_dim' in config:
+            # New funnel approach
+            encoder_initial_dim = config['encoder_initial_dim']
+            encoder_expand_factor = config['encoder_expand_factor']
+
+            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+            embedding_dim = encoder_dims[-1]
+        else:
+            # Backward compatibility
+            encoder_dims = [config[f'mlp_dim_{idx}'] for idx in range(encoder_n_layers)]
+            embedding_dim = config['embedding_dim']
+
+        encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
         start_lr = config['lr']
         weight_decay = config['weight_decay']
@@ -106,8 +115,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 def get_optuna_params(trial):
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
 
-    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=6, high=9)
-
     # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
     headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
@@ -119,12 +126,13 @@ def get_optuna_params(trial):
 
     # Encoder config
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
-    encoder_dims = [2 ** trial.suggest_int(f'encoder_dim_{i}_pow', low=4, high=8) for i in range(encoder_n_layers)]
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+    encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
-    encoder_layers = [
-        MLPLayerConfig(out_dim=d, dropout=dropout)
-        for d in encoder_dims
-    ]
+    # Embedding dim
+    embedding_dim = encoder_dims[-1]
 
     return dict(
         encoder_layers=encoder_layers,
