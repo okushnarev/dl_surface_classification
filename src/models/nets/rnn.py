@@ -54,7 +54,6 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         rnn_hidden_dim = config['rnn_hidden_dim']
 
         mlp_n_layers = config['mlp_n_layers']
-        embedding_dim = config['embedding_dim']
 
         if 'mlp_initial_dim' in config:
             # New funnel approach
@@ -62,9 +61,11 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             mlp_expand_factor = config['mlp_expand_factor']
 
             mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
+            embedding_dim = encoder_dims[-1]
         else:
             # Backward compatibility
             mlp_dims = [config[f'mlp_dim_{idx}'] for idx in range(mlp_n_layers)]
+            embedding_dim = config['embedding_dim']
 
         encoder_layers = [
             MLPLayerConfig(out_dim=d, dropout=dropout)
@@ -109,10 +110,8 @@ def get_optuna_params(trial):
     mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=0, high=2)
     mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor)
 
-    # Embedding dim with constraints
-    max_embedding_dim_pow = np.log2(mlp_dims[-1])
-    min_embedding_dim_pow = min(4, max_embedding_dim_pow)
-    embedding_dim = 2 ** trial.suggest_int('embedding_dim_pow', low=min_embedding_dim_pow, high=max_embedding_dim_pow)
+    # Embedding dim
+    embedding_dim = encoder_dims[-1]
 
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=4, high=8)
 
