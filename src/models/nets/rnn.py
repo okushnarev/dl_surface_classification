@@ -66,10 +66,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             encoder_dims = [config[f'mlp_dim_{idx}'] for idx in range(encoder_n_layers)]
             embedding_dim = config['embedding_dim']
 
-        encoder_layers = [
-            MLPLayerConfig(out_dim=d, dropout=dropout)
-            for d in mlp_dims
-        ]
+        encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
         start_lr = config['lr']
         weight_decay = config['weight_decay']
@@ -113,11 +110,6 @@ def get_optuna_params(trial):
     # Embedding dim
     embedding_dim = encoder_dims[-1]
 
-
-    encoder_layers = [
-        MLPLayerConfig(out_dim=d, dropout=dropout)
-        for d in mlp_dims
-    ]
     rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=6, high=10)
 
     return dict(

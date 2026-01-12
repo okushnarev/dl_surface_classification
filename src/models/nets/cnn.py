@@ -69,10 +69,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             # Backward compatibility
             cnn_dims = [config[f'cnn_out_ch_{idx}'] for idx in range(cnn_n_layers)]
 
-        cnn_configs = [
-            CNNLayerConfig(out_channels=d, kernel_size=3)
-            for d in cnn_dims
-        ]
+        cnn_configs = [CNNLayerConfig(out_channels=d, kernel_size=3) for d in cnn_dims]
 
         dropout = config['dropout']
         mlp_n_layers = config['mlp_n_layers']
@@ -86,10 +83,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             # Backward compatibility
             mlp_dims = [config[f'mlp_dim_{idx}'] for idx in range(mlp_n_layers)]
 
-        mlp_configs = [
-            MLPLayerConfig(out_dim=d, dropout=dropout)
-            for d in mlp_dims
-        ]
+        mlp_configs = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in mlp_dims]
 
         start_lr = config['lr']
         weight_decay = config['weight_decay']
@@ -130,21 +124,14 @@ def get_optuna_params(trial):
     cnn_initial_dim = 2 ** trial.suggest_int('cnn_initial_dim_pow', low=2, high=5)
     cnn_expand_factor = 2 ** trial.suggest_int('cnn_expand_factor_pow', low=0, high=2)
     cnn_channels = build_funnel_dims(cnn_initial_dim, cnn_n_layers, cnn_expand_factor)
-
-    cnn_configs = [
-        CNNLayerConfig(out_channels=ch, kernel_size=3)
-        for ch in cnn_channels
-    ]
+    cnn_configs = [CNNLayerConfig(out_channels=ch, kernel_size=3) for ch in cnn_channels]
 
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
     mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=2, high=5)
     mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=-2, high=0)
     mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor, silent=True)
 
-    mlp_configs = [
-        MLPLayerConfig(out_dim=d, dropout=dropout)
-        for d in mlp_dims
-    ]
+    mlp_configs = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in mlp_dims]
 
     return dict(
         cnn_configs=cnn_configs,
