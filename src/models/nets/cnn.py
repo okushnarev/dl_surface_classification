@@ -3,7 +3,8 @@ from pathlib import Path
 
 import torch.nn as nn
 
-from src.models.schemas import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config, build_mlp_from_config
+from src.models.schemas import CNNLayerConfig, MLPLayerConfig, build_cnn_from_config, build_funnel_dims, \
+    build_mlp_from_config
 
 
 class CNN(nn.Module):
@@ -57,15 +58,37 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
+        cnn_n_layers = config['cnn_n_layers']
+        if 'cnn_initial_dim' in config:
+            # New funnel approach
+            cnn_initial_dim = config['cnn_initial_dim']
+            cnn_expand_factor = config['cnn_expand_factor']
+
+            cnn_dims = build_funnel_dims(cnn_initial_dim, cnn_n_layers, cnn_expand_factor)
+        else:
+            # Backward compatibility
+            cnn_dims = [config[f'cnn_out_ch_{idx}'] for idx in range(cnn_n_layers)]
+
         cnn_configs = [
-            CNNLayerConfig(out_channels=config[f'cnn_out_ch_{idx}'], kernel_size=3)
-            for idx in range(config['cnn_n_layers'])
+            CNNLayerConfig(out_channels=d, kernel_size=3)
+            for d in cnn_dims
         ]
 
         dropout = config['dropout']
+        mlp_n_layers = config['mlp_n_layers']
+        if 'mlp_initial_dim' in config:
+            # New funnel approach
+            mlp_initial_dim = config['mlp_initial_dim']
+            mlp_expand_factor = config['mlp_expand_factor']
+
+            mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor, silent=True)
+        else:
+            # Backward compatibility
+            mlp_dims = [config[f'mlp_dim_{idx}'] for idx in range(mlp_n_layers)]
+
         mlp_configs = [
-            MLPLayerConfig(out_dim=config[f'mlp_dim_{idx}'], dropout=dropout)
-            for idx in range(config['mlp_n_layers'])
+            MLPLayerConfig(out_dim=d, dropout=dropout)
+            for d in mlp_dims
         ]
 
         start_lr = config['lr']
@@ -104,7 +127,9 @@ def get_optuna_params(trial):
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
 
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
-    cnn_channels = [2 ** trial.suggest_int(f'cnn_out_ch_{i}_pow', low=4, high=8) for i in range(cnn_n_layers)]
+    cnn_initial_dim = 2 ** trial.suggest_int('cnn_initial_dim_pow', low=2, high=5)
+    cnn_expand_factor = 2 ** trial.suggest_int('cnn_expand_factor_pow', low=0, high=2)
+    cnn_channels = build_funnel_dims(cnn_initial_dim, cnn_n_layers, cnn_expand_factor)
 
     cnn_configs = [
         CNNLayerConfig(out_channels=ch, kernel_size=3)
@@ -112,7 +137,9 @@ def get_optuna_params(trial):
     ]
 
     mlp_n_layers = trial.suggest_int('mlp_n_layers', 1, 4)
-    mlp_dims = [2 ** trial.suggest_int(f'mlp_dim_{i}_pow', low=4, high=8) for i in range(mlp_n_layers)]
+    mlp_initial_dim = 2 ** trial.suggest_int('mlp_initial_dim_pow', low=2, high=5)
+    mlp_expand_factor = 2 ** trial.suggest_int('mlp_expand_factor_pow', low=-2, high=0)
+    mlp_dims = build_funnel_dims(mlp_initial_dim, mlp_n_layers, mlp_expand_factor, silent=True)
 
     mlp_configs = [
         MLPLayerConfig(out_dim=d, dropout=dropout)
