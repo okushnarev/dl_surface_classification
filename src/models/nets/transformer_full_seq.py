@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from src.models.schemas import MLPLayerConfig, build_mlp_from_config
+from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
 from src.modules.individual_tokenizer import NumericalFeatureTokenizer
 
 
@@ -73,10 +73,19 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_transformer_layers = config['num_transformer_layers']
 
         dropout = config['dropout']
-        classification_layers = [
-            MLPLayerConfig(out_dim=config[f'classification_dim_{idx}'], dropout=dropout)
-            for idx in range(config['classification_n_layers'])
-        ]
+        classification_n_layers = config['classification_n_layers']
+        if 'classification_initial_dim' in config:
+            # New funnel approach
+            classification_initial_dim = config['classification_initial_dim']
+            classification_expand_factor = config['classification_expand_factor']
+
+            classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                                    classification_expand_factor)
+        else:
+            # Backward compatibility
+            classification_dims = [config[f'classification_dim_{idx}'] for idx in range(classification_n_layers)]
+
+        classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
         start_lr = config['lr']
         weight_decay = config['weight_decay']
@@ -118,14 +127,13 @@ def get_optuna_params(trial):
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
 
+    # Classification Head
     classification_n_layers = trial.suggest_int('classification_n_layers', 1, 4)
-    classification_dims = [2 ** trial.suggest_int(f'classification_dim_{i}_pow', low=4, high=8) for i in
-                           range(classification_n_layers)]
-
-    classification_layers = [
-        MLPLayerConfig(out_dim=d, dropout=dropout)
-        for d in classification_dims
-    ]
+    classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=6, high=10)
+    classification_expand_factor = 2 ** trial.suggest_int('classification_expand_factor_pow', low=-2, high=0)
+    classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                            classification_expand_factor, silent=True)
+    classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
     return dict(
         embedding_dim=embedding_dim,
