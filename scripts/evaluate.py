@@ -66,14 +66,14 @@ def main():
         data_dir = ProjectPaths.get_raw_data_dir()
         csv_path = data_dir / f'{args.dataset}.csv'
     else:
-        print(f'Error: no instruction passed to find evaluation dataset')
+        print('Error: no instruction passed to find evaluation dataset')
         sys.exit(1)
 
     if not csv_path.exists():
         print(f'Error: Data file not found at {csv_path}')
         sys.exit(1)
 
-    print(f'Loading data from {csv_path}...')
+    print(f'Loading data from {csv_path}')
     df = pd.read_csv(csv_path)
 
     # Define output directory
