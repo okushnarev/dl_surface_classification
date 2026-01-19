@@ -166,7 +166,7 @@ def run_optimization(args):
     # Take a half of the original train dataset as a proxy ds
     proxy_df, _ = train_test_split(
         _df_train,
-        test_size=0.5,
+        train_size=0.3,
         random_state=random_state,
         shuffle=True,
         stratify=_df_train[target_col],
