@@ -109,7 +109,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_cross_attn_heads = config['num_cross_attn_heads']
         num_cross_attn_layers = config['num_cross_attn_layers']
 
-        dropout = config['dropout']
+        dropout = config.get('dropout', 0.2)
         # Encoder
         encoder_n_layers = config['encoder_n_layers']
         if 'encoder_initial_dim' in config:
@@ -157,7 +157,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in cross_attn_dims]
 
         start_lr = config['lr']
-        weight_decay = config['weight_decay']
+        weight_decay = config.get('weight_decay', 1e-4)
 
     else:
         # Defaults

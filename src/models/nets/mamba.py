@@ -64,7 +64,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             headdim=headdim,
         )
 
-        dropout = config['dropout']
+        dropout = config.get('dropout', 0.2)
         encoder_n_layers = config['encoder_n_layers']
         if 'encoder_initial_dim' in config:
             # New funnel approach
@@ -81,7 +81,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
         start_lr = config['lr']
-        weight_decay = config['weight_decay']
+        weight_decay = config.get('weight_decay', 1e-4)
     else:
         # Defaults
         embedding_dim = 32
