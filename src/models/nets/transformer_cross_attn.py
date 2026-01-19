@@ -157,7 +157,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         cross_attn_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in cross_attn_dims]
 
         start_lr = config['lr']
-        weight_decay = config.get('weight_decay', 1e-4)
+        weight_decay = config.get('weight_decay', 1e-2)
 
     else:
         # Defaults

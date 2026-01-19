@@ -93,7 +93,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
         start_lr = config['lr']
-        weight_decay = config.get('weight_decay', 1e-4)
+        weight_decay = config.get('weight_decay', 1e-2)
     else:
         # Defaluts
         embedding_dim = 32
