@@ -16,6 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='main')
     parser.add_argument('--full_ds_name', type=str, default='main')
+    parser.add_argument('--proxy_size', type=float, default=0.4, help='Part of the train set that will be used as proxy dataset')
     parser.add_argument('--seed', type=int, default=69, help='Random seed')
     return parser.parse_args()
 
@@ -32,7 +33,7 @@ def main():
                                          stratify=df['surf'],
                                          random_state=args.seed)
     _, df_proxy = train_test_split(df_train,
-                                        test_size=0.4,
+                                        test_size=args.proxy_size,
                                         shuffle=True,
                                         stratify=df_train['surf'],
                                         random_state=args.seed)
