@@ -105,6 +105,7 @@ def run_batch_mode(args):
             # Set required args
             run_config['nn_name'] = args.nn_name
             run_config['exp_name'] = exp_name
+            run_config['config_name'] = args.config_name
 
             # Compose CLI command
             # Call THIS script again, but in --single_run mode
