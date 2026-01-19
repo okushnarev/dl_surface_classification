@@ -253,7 +253,7 @@ def run_optimization(args):
     else:
         # Auto-generate path based on conventions if no explicit output provided
         name = args.exp_name if args.exp_name else f'{args.filter}_{args.ds_type}'
-        save_path = ProjectPaths.get_params_path(args.nn_name, args.dataset, name)
+        save_path = ProjectPaths.get_params_path(args.nn_name, args.config_name, name)
 
     # Ensure the directory exists
     save_path.parent.mkdir(parents=True, exist_ok=True)

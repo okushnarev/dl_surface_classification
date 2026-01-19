@@ -327,7 +327,7 @@ def main():
     exp_meta = get_experiment_metadata(args.nets, args.config_name)
 
     # Load results
-    results_dir = ProjectPaths.get_evaluation_dir(dataset, args.subset)
+    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.subset)
 
     # Aggregate data
     accuracy_by_dir = {}
@@ -359,7 +359,7 @@ def main():
 
     # Paths
     prefix = '_'.join(sorted(args.nets))
-    figure_dir = ProjectPaths.get_figures_dir(dataset) / prefix
+    figure_dir = ProjectPaths.get_figures_dir(args.config_name) / prefix
     figure_dir.mkdir(parents=True, exist_ok=True)
 
     # Radial plots

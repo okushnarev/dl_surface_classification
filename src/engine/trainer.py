@@ -50,7 +50,7 @@ def train_model(args):
     # Define run name
     run_name = args.exp_name or datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    ckpt_path = ProjectPaths.get_run_dir(args.dataset, run_name)
+    ckpt_path = ProjectPaths.get_run_dir(args.config_name, run_name)
     ckpt_path.mkdir(parents=True, exist_ok=True)
 
     # Load Data
@@ -119,7 +119,7 @@ def train_model(args):
         cfg_path = Path(args.param_file)
     elif args.exp_name:
         # Auto-resolve based on experiment name
-        cfg_path = ProjectPaths.get_params_path(args.nn_name, args.dataset, args.exp_name)
+        cfg_path = ProjectPaths.get_params_path(args.nn_name, args.config_name, args.exp_name)
     else:
         # Fallback/Error. Shouldn't happen in proper runs
         cfg_path = None

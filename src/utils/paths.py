@@ -36,23 +36,23 @@ class ProjectPaths:
         return cls._ROOT / 'configs' / 'datasets' / dataset_scope / 'dataset_config.json'
 
     @classmethod
-    def get_params_dir(cls, model_name: str, dataset_scope: str) -> Path:
+    def get_params_dir(cls, model_name: str, config_name: str) -> Path:
         """
-        Returns: configs/model_params/<model_name>/<dataset_scope>/
+        Returns: configs/model_params/<model_name>/<config_name>/
         Example: configs/model_params/rnn/main/
         """
-        return cls._ROOT / 'configs' / 'model_params' / model_name / dataset_scope
+        return cls._ROOT / 'configs' / 'model_params' / model_name / config_name
 
     @classmethod
-    def get_params_path(cls, model_name: str, dataset_scope: str, exp_name: str) -> Path:
+    def get_params_path(cls, model_name: str, config_name: str, exp_name: str) -> Path:
         """
-        Returns: configs/model_params/<model>/<dataset>/best_params_<exp_name>.json
+        Returns: configs/model_params/<model>/<config_name>/best_params_<exp_name>.json
         """
         # We ensure the filename is safe (replace spaces with underscores if any)
         safe_name = exp_name.replace(' ', '_')
         filename = f'best_params_{safe_name}.json'
 
-        return cls.get_params_dir(model_name, dataset_scope) / filename
+        return cls.get_params_dir(model_name, config_name) / filename
 
     @classmethod
     def get_experiment_config_path(cls, model_name: str, config_name: str) -> Path:
@@ -63,28 +63,28 @@ class ProjectPaths:
         return cls._ROOT / 'configs' / 'experiments' / model_name / f'{config_name}.yaml'
 
     @classmethod
-    def get_run_dir(cls, dataset_scope: str, exp_name: str) -> Path:
+    def get_run_dir(cls, config_name: str, exp_name: str) -> Path:
         """
-        Returns: experiments/<study_group>/<exp_name>/
+        Returns: experiments/<config_name>/<exp_name>/
         Example: experiments/main/rnn_no_filter_type_3_main/
         """
-        return cls._ROOT / 'experiments' / dataset_scope / exp_name
+        return cls._ROOT / 'experiments' / config_name / exp_name
 
     @classmethod
-    def get_evaluation_dir(cls, dataset_scope: str, subset_name: str | Path) -> Path:
+    def get_evaluation_dir(cls, config_name: str, subset_name: str | Path) -> Path:
         """
-        Returns: results/<dataset_scope>/<subset_name>/
+        Returns: results/<config_name>/<subset_name>/
         Example: results/main/cv/full/ or results/main/full/
         """
-        return cls._ROOT / 'results' / dataset_scope / subset_name
+        return cls._ROOT / 'results' / config_name / subset_name
 
     @classmethod
-    def get_figures_dir(cls, dataset_scope: str) -> Path:
+    def get_figures_dir(cls, config_name: str) -> Path:
         """
-        Returns: figures/<dataset_scope>/
+        Returns: figures/<config_name>/
         Example: figures/main/
         """
-        return cls._ROOT / 'figures' / dataset_scope
+        return cls._ROOT / 'figures' / config_name
 
 
 if __name__ == '__main__':

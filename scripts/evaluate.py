@@ -77,7 +77,7 @@ def main():
     df = pd.read_csv(csv_path)
 
     # Define output directory
-    results_dir = ProjectPaths.get_evaluation_dir(args.dataset, args.subset)
+    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.subset)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     # Ensure nets are in the same order
@@ -129,8 +129,7 @@ def main():
                 continue
 
             # Checkpoint, scaler, label encoder
-            exp_dataset_scope = exp.get('dataset', defaults.get('dataset', args.dataset))
-            run_dir = ProjectPaths.get_run_dir(exp_dataset_scope, exp_name)
+            run_dir = ProjectPaths.get_run_dir(args.config_name, exp_name)
 
             ckpt_path = run_dir / f'{args.ckpt_type}.pt'
             scaler_path = run_dir / 'scaler.joblib'
@@ -165,7 +164,7 @@ def main():
             if param_file:
                 cfg_path = Path(param_file)
             else:
-                cfg_path = ProjectPaths.get_params_path(net_name, exp_dataset_scope, exp_name)
+                cfg_path = ProjectPaths.get_params_path(net_name, args.config_name, exp_name)
 
             # Prepare config
             seq_len = exp_args.get('seq_len', 10)

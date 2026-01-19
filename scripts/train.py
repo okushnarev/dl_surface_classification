@@ -123,8 +123,7 @@ def run_batch_mode(args):
                     cmd.extend([f'--{key}', str(value)])
 
             # Compose a path to store logs
-            dataset_scope = args.config_name
-            log_dir = ProjectPaths.get_run_dir(dataset_scope, exp_name)
+            log_dir = ProjectPaths.get_run_dir(args.config_name, exp_name)
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / 'training_log.txt'
 
