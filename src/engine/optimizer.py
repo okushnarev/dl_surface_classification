@@ -147,8 +147,6 @@ def run_optimization(args):
     print(f'Starting Optimization for {args.nn_name} on {args.dataset}')
     print(f'Device: {device.type.upper()}')
 
-    random_state = 69
-
     # Load the dataset configuration to understand metadata and feature groups
     with open(ProjectPaths.get_dataset_config_path(args.dataset), 'r') as f:
         dataset_config = json.load(f)
@@ -158,26 +156,17 @@ def run_optimization(args):
     target_col = dataset_config['metadata']['target_col']
     feature_cols = dataset_config['features'][args.filter][args.ds_type]
 
-    # Locate and load the validation data
+    # Locate and load the proxy data
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
-    # Treat val dataset as a proxy dataset since it is of a big size
-    _df_train = pd.read_csv(data_dir / 'train.csv')
+    df_proxy = pd.read_csv(data_dir / 'proxy.csv')
 
-    # Take a half of the original train dataset as a proxy ds
-    proxy_df, _ = train_test_split(
-        _df_train,
-        train_size=0.3,
-        random_state=random_state,
-        shuffle=True,
-        stratify=_df_train[target_col],
-    )
-
+    # Split proxy in train test
     df_train, df_val = train_test_split(
-        proxy_df,
+        df_proxy,
         test_size=0.2,
-        random_state=random_state,
+        random_state=69,
         shuffle=True,
-        stratify=proxy_df[target_col],
+        stratify=df_proxy[target_col],
     )
 
     df_train = df_train.sort_index()

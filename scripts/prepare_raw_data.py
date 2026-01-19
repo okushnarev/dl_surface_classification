@@ -31,21 +31,21 @@ def main():
                                          shuffle=True,
                                          stratify=df['surf'],
                                          random_state=args.seed)
-    df_train, df_val = train_test_split(df_train,
-                                        train_size=0.875,
+    _, df_proxy = train_test_split(df_train,
+                                        test_size=0.4,
                                         shuffle=True,
                                         stratify=df_train['surf'],
                                         random_state=args.seed)
     df_train = df_train.sort_index()
     df_test = df_test.sort_index()
-    df_val = df_val.sort_index()
+    df_proxy = df_proxy.sort_index()
 
     output_path = ProjectPaths.get_processed_data_dir(args.dataset)
     output_path.mkdir(parents=True, exist_ok=True)
 
     df_train.to_csv(output_path / 'train.csv', index=False)
     df_test.to_csv(output_path / 'test.csv', index=False)
-    df_val.to_csv(output_path / 'val.csv', index=False)
+    df_proxy.to_csv(output_path / 'proxy.csv', index=False)
 
 
 if __name__ == '__main__':
