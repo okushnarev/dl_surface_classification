@@ -113,7 +113,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)

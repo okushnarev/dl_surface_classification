@@ -103,7 +103,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
     # General params
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
+    weight_decay = 1e-4
 
     # Optuna model params
     model_kwargs = get_params_func(trial)

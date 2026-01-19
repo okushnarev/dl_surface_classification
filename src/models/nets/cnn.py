@@ -118,7 +118,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
     cnn_initial_dim = 2 ** trial.suggest_int('cnn_initial_dim_pow', low=2, high=5)

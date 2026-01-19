@@ -131,7 +131,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
