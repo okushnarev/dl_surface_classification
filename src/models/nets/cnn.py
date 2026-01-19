@@ -71,7 +71,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
         cnn_configs = [CNNLayerConfig(out_channels=d, kernel_size=3) for d in cnn_dims]
 
-        dropout = config['dropout']
+        dropout = config.get('dropout', 0.2)
         mlp_n_layers = config['mlp_n_layers']
         if 'mlp_initial_dim' in config:
             # New funnel approach
@@ -86,7 +86,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         mlp_configs = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in mlp_dims]
 
         start_lr = config['lr']
-        weight_decay = config['weight_decay']
+        weight_decay = config.get('weight_decay', 1e-4)
 
     else:
         # Defaults
@@ -118,7 +118,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     cnn_n_layers = trial.suggest_int('cnn_n_layers', 1, 3)
     cnn_initial_dim = 2 ** trial.suggest_int('cnn_initial_dim_pow', low=2, high=5)

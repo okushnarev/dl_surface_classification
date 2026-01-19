@@ -68,7 +68,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
         start_lr = config['lr']
-        weight_decay = config['weight_decay']
+        weight_decay = config.get('weight_decay', 1e-4)
     else:
         # Defaults
         embedding_dim = 32
@@ -98,7 +98,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
     encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)

@@ -16,6 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='main')
     parser.add_argument('--full_ds_name', type=str, default='main')
+    parser.add_argument('--proxy_size', type=float, default=0.4, help='Part of the train set that will be used as proxy dataset')
     parser.add_argument('--seed', type=int, default=69, help='Random seed')
     return parser.parse_args()
 
@@ -31,21 +32,21 @@ def main():
                                          shuffle=True,
                                          stratify=df['surf'],
                                          random_state=args.seed)
-    df_train, df_val = train_test_split(df_train,
-                                        train_size=0.875,
+    _, df_proxy = train_test_split(df_train,
+                                        test_size=args.proxy_size,
                                         shuffle=True,
                                         stratify=df_train['surf'],
                                         random_state=args.seed)
     df_train = df_train.sort_index()
     df_test = df_test.sort_index()
-    df_val = df_val.sort_index()
+    df_proxy = df_proxy.sort_index()
 
     output_path = ProjectPaths.get_processed_data_dir(args.dataset)
     output_path.mkdir(parents=True, exist_ok=True)
 
     df_train.to_csv(output_path / 'train.csv', index=False)
     df_test.to_csv(output_path / 'test.csv', index=False)
-    df_val.to_csv(output_path / 'val.csv', index=False)
+    df_proxy.to_csv(output_path / 'proxy.csv', index=False)
 
 
 if __name__ == '__main__':

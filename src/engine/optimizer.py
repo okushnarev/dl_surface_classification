@@ -103,7 +103,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
     # General params
     lr = trial.suggest_float('lr', low=1e-4, high=1e-2, log=True)
-    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
+    weight_decay = 1e-4
 
     # Optuna model params
     model_kwargs = get_params_func(trial)
@@ -156,17 +156,17 @@ def run_optimization(args):
     target_col = dataset_config['metadata']['target_col']
     feature_cols = dataset_config['features'][args.filter][args.ds_type]
 
-    # Locate and load the validation data
+    # Locate and load the proxy data
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
-    # Treat val dataset as a proxy dataset since it is of a big size
-    proxy_df = pd.read_csv(data_dir / 'val.csv')
+    df_proxy = pd.read_csv(data_dir / 'proxy.csv')
 
+    # Split proxy in train test
     df_train, df_val = train_test_split(
-        proxy_df,
+        df_proxy,
         test_size=0.2,
         random_state=69,
         shuffle=True,
-        stratify=proxy_df[target_col],
+        stratify=df_proxy[target_col],
     )
 
     df_train = df_train.sort_index()

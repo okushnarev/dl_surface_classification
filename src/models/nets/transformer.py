@@ -61,7 +61,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_transformer_heads = config['num_transformer_heads']
         num_transformer_layers = config['num_transformer_layers']
 
-        dropout = config['dropout']
+        dropout = config.get('dropout', 0.2)
 
         encoder_n_layers = config['encoder_n_layers']
         if 'encoder_initial_dim' in config:
@@ -93,7 +93,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
         start_lr = config['lr']
-        weight_decay = config['weight_decay']
+        weight_decay = config.get('weight_decay', 1e-2)
     else:
         # Defaluts
         embedding_dim = 32
@@ -131,7 +131,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 
 def get_optuna_params(trial):
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    dropout = 0.2
 
     num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
