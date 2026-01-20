@@ -17,7 +17,13 @@ class MLPLayerConfig(BaseModel):
     dropout: float = 0.0
 
 
-def build_funnel_dims(initial_dim: int, n_steps: int, factor: float = 1, silent=False) -> list[int]:
+def build_funnel_dims(
+        initial_dim: int,
+        n_steps: int,
+        factor: float = 1,
+        silent: bool = False,
+        top: int = float('inf')
+) -> list[int]:
     """
     Generates a sequence of dimensions creating a funnel shape
 
@@ -34,6 +40,7 @@ def build_funnel_dims(initial_dim: int, n_steps: int, factor: float = 1, silent=
     :param bool silent: If ``True``, suppresses the ``ValueError`` when a
        dimension drops below 1, returning the partial list generated up to
        that point. Defaults to ``False``
+    :param int top: Maximum dimension size. Defaults to 'inf'
 
     :return: A list of integers representing the calculated dimensions
     :rtype: list[int]
@@ -59,7 +66,7 @@ def build_funnel_dims(initial_dim: int, n_steps: int, factor: float = 1, silent=
             else:
                 raise ValueError(f'Cannot create dimension less than 1: {current_dim=}')
         output.append(current_dim)
-        current_dim = int(current_dim * factor)
+        current_dim = min(top, int(current_dim * factor))
 
     return output
 
