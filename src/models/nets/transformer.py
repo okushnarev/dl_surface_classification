@@ -149,7 +149,7 @@ def get_optuna_params(trial):
 
     # Classification Head
     classification_n_layers = trial.suggest_int('classification_n_layers', 1, 2)
-    classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=6, high=10)
+    classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=6, high=8)
     classification_expand_factor = 2 ** trial.suggest_int('classification_expand_factor_pow', low=-2, high=0)
     classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
                                             classification_expand_factor, silent=True, top=max_dim_size)
