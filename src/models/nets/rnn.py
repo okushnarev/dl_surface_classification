@@ -99,11 +99,12 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 def get_optuna_params(trial):
     dropout = 0.2
+    max_dim_size = 256
 
-    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
-    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 3)
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=8)
     encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
-    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, top=max_dim_size)
     encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
     # Embedding dim
