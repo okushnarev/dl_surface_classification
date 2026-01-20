@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--config_name', type=str, default='main', help='YAML config filename')
 
     # Optimizer args from engine/optimizer
-    # Adds --n_trials, --n_jobs, --epochs, --filter, etc.
+    # Adds --n_trials, --epochs, --filter, etc.
     parser = add_optimizer_args(parser)
 
     # Ensure compulsory args exist in the parser for Manager Mode usage

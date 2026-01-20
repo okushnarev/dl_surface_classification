@@ -9,7 +9,6 @@ defaults:
   optimization:
     n_trials: 50
     epochs: 15
-    n_jobs: 1
 
 experiments:
   - name: rnn_kalman_type_1
