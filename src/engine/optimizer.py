@@ -90,7 +90,7 @@ def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, l
     return val_loss
 
 
-def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, num_classes, sequence_length, batch_size, device,
+def generic_objective(trial, net_name, train_loader, val_loader, input_dim, num_classes, sequence_length, device,
                       epochs):
     """
     The universal objective function used by Optuna
@@ -120,11 +120,6 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
     # Create model
     model = ModelClass(**model_kwargs).to(device)
-
-    # Create a DataLoader
-    pin_memory = False if device == torch.device('cpu') else True
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
 
     # Run the execution loop
     loss = _execute_trial_loop(
@@ -199,6 +194,14 @@ def run_optimization(args):
         torch.tensor(y_val, dtype=torch.long)
     )
 
+    # Create a DataLoader
+    pin_memory = False if device == torch.device('cpu') else True
+    num_workers = 0 if device == torch.device('cpu') else 2
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=pin_memory,
+                              num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=pin_memory,
+                            num_workers=num_workers)
+
     # Initialize and run the Optuna study
     study = optuna.create_study(
         direction='minimize',
@@ -212,12 +215,11 @@ def run_optimization(args):
         partial(
             generic_objective,
             net_name=args.nn_name,
-            train_dataset=train_dataset,
-            val_dataset=val_dataset,
+            train_loader=train_loader,
+            val_loader=val_loader,
             input_dim=len(feature_cols),
             num_classes=num_classes,
             sequence_length=args.seq_len,
-            batch_size=args.batch_size,
             device=device,
             epochs=args.epochs
         ),
