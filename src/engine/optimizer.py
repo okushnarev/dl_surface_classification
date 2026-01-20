@@ -163,7 +163,7 @@ def run_optimization(args):
     # Split proxy in train test
     df_train, df_val = train_test_split(
         df_proxy,
-        test_size=0.2,
+        test_size=0.1,
         random_state=69,
         shuffle=True,
         stratify=df_proxy[target_col],
