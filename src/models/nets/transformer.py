@@ -58,7 +58,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
-        num_transformer_heads = config['num_transformer_heads']
+        num_transformer_heads = config.get('num_transformer_heads', 1)
         num_transformer_layers = config['num_transformer_layers']
 
         dropout = config.get('dropout', 0.2)
@@ -132,26 +132,27 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 def get_optuna_params(trial):
     dropout = 0.2
+    max_dim_size = 256
 
-    num_transformer_heads = 2 ** trial.suggest_int('num_transformer_heads_pow', low=0, high=2)
-    num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=4)
+    num_transformer_heads = 1
+    num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=2)
 
     # Encoder Head
-    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
-    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 2)
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=8)
     encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
-    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, top=max_dim_size)
     encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
     # Embedding dim
     embedding_dim = encoder_dims[-1]
 
     # Classification Head
-    classification_n_layers = trial.suggest_int('classification_n_layers', 1, 4)
+    classification_n_layers = trial.suggest_int('classification_n_layers', 1, 2)
     classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=6, high=10)
     classification_expand_factor = 2 ** trial.suggest_int('classification_expand_factor_pow', low=-2, high=0)
     classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
-                                            classification_expand_factor, silent=True)
+                                            classification_expand_factor, silent=True, top=max_dim_size)
     classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
 
     return dict(
