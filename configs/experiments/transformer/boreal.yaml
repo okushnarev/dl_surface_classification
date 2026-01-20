@@ -8,7 +8,7 @@ defaults:
     epochs: 150
     num_workers: 2
   optimization:
-    n_trials: 50
+    n_trials: 80
     epochs: 15
     n_jobs: 1
 
