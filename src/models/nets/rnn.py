@@ -7,6 +7,8 @@ from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from
 
 
 class TabularRNN(nn.Module):
+    max_dim_size = 256
+
     def __init__(self,
                  input_dim: int,
                  encoder_layers: list[MLPLayerConfig],
@@ -49,6 +51,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         with open(cfg_path, 'r') as f:
             config = json.load(f)['params']
 
+        max_dim_size = TabularRNN.max_dim_size
         dropout = config.get('dropout', 0.2)
         rnn_hidden_dim = config['rnn_hidden_dim']
 
@@ -58,7 +61,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             encoder_initial_dim = config['encoder_initial_dim']
             encoder_expand_factor = config['encoder_expand_factor']
 
-            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, top=max_dim_size)
             embedding_dim = encoder_dims[-1]
         else:
             # Backward compatibility
@@ -99,7 +102,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 def get_optuna_params(trial):
     dropout = 0.2
-    max_dim_size = 256
+    max_dim_size = TabularRNN.max_dim_size
 
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 3)
     encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=8)

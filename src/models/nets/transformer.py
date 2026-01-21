@@ -8,6 +8,7 @@ from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from
 
 
 class Transformer(nn.Module):
+    max_dim_size = 256
     def __init__(self,
                  input_dim: int,
                  encoder_layers: list[MLPLayerConfig],
@@ -61,6 +62,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         num_transformer_heads = config.get('num_transformer_heads', 1)
         num_transformer_layers = config['num_transformer_layers']
 
+        max_dim_size = Transformer.max_dim_size
         dropout = config.get('dropout', 0.2)
 
         encoder_n_layers = config['encoder_n_layers']
@@ -69,7 +71,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             encoder_initial_dim = config['encoder_initial_dim']
             encoder_expand_factor = config['encoder_expand_factor']
 
-            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, silent=True)
+            encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, silent=True,
+                                             top=max_dim_size)
             embedding_dim = encoder_dims[-1]
         else:
             # Backward compatibility
@@ -85,7 +88,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             classification_expand_factor = config['classification_expand_factor']
 
             classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
-                                                    classification_expand_factor)
+                                                    classification_expand_factor, top=max_dim_size)
         else:
             # Backward compatibility
             classification_dims = [config[f'classification_dim_{idx}'] for idx in range(classification_n_layers)]
@@ -132,7 +135,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 def get_optuna_params(trial):
     dropout = 0.2
-    max_dim_size = 256
+    max_dim_size = Transformer.max_dim_size
 
     num_transformer_heads = 1
     num_transformer_layers = trial.suggest_int('num_transformer_layers', low=1, high=2)
