@@ -141,7 +141,7 @@ def get_optuna_params(trial):
 
     # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
-    headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
+    headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=6)
 
     mamba_config = MambaConfig(
         d_state=d_state,
@@ -150,7 +150,7 @@ def get_optuna_params(trial):
 
     # Encoder Head
     encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 2)
-    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=8)
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=6, high=8)
     encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
     encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, top=max_dim_size)
     encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
