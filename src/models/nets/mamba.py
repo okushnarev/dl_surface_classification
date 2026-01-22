@@ -6,7 +6,6 @@ from mamba_ssm import Mamba2
 from pydantic import BaseModel
 from torch import Tensor, nn
 
-from eval_rnn import embedding_dim
 from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
 
 
