@@ -141,7 +141,7 @@ def get_optuna_params(trial):
 
     # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
-    headdim = 2 ** trial.suggest_int('headdim_pow', low=5, high=8)
+    headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
 
     mamba_config = MambaConfig(
         d_state=d_state,
