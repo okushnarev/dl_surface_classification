@@ -20,10 +20,12 @@ class MambaConfig(BaseModel):
 
 
 class MambaClassifier(nn.Module):
+    max_dim_size = 256
     def __init__(
             self,
             input_dim: int,
             encoder_layers: list[MLPLayerConfig],
+            classification_layers: list[MLPLayerConfig],
             mamba_config: dict | MambaConfig,
             embedding_dim: int,
             num_classes: int):
@@ -34,17 +36,18 @@ class MambaClassifier(nn.Module):
             mamba_config = MambaConfig(**mamba_config)
 
         # MLP Encoder Block
-        self.mlp_encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
+        self.encoder = build_mlp_from_config(encoder_layers, input_dim, embedding_dim)
 
         self.mamba = Mamba2(
             d_model=embedding_dim,
             **mamba_config.model_dump(),
         )
 
-        self.classifier = nn.Linear(embedding_dim, num_classes)
+        # Classification head
+        self.classifier = build_mlp_from_config(classification_layers, embedding_dim, num_classes)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.mlp_encoder(x)
+        x = self.encoder(x)
         x = self.mamba(x)
         output = self.classifier(x[:, -1, :])
         return output
@@ -64,6 +67,8 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         )
 
         dropout = config.get('dropout', 0.2)
+        max_dim_size = MambaClassifier.max_dim_size
+
         encoder_n_layers = config['encoder_n_layers']
         if 'encoder_initial_dim' in config:
             # New funnel approach
@@ -79,6 +84,20 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
         encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
+        classification_n_layers = config['classification_n_layers']
+        if 'classification_initial_dim' in config:
+            # New funnel approach
+            classification_initial_dim = config['classification_initial_dim']
+            classification_expand_factor = config['classification_expand_factor']
+
+            classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                                    classification_expand_factor, top=max_dim_size)
+        else:
+            # Backward compatibility
+            classification_dims = [config[f'classification_dim_{idx}'] for idx in range(classification_n_layers)]
+
+        classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
+
         start_lr = config['lr']
         weight_decay = config.get('weight_decay', 1e-2)
     else:
@@ -91,6 +110,10 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
             MLPLayerConfig(out_dim=32, dropout=dropout),
         ]
 
+        classification_layers = [
+            MLPLayerConfig(out_dim=32, dropout=dropout),
+        ]
+
         mamba_config = MambaConfig()
 
         start_lr = 1e-2
@@ -100,6 +123,7 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
         model=dict(
             input_dim=input_dim,
             encoder_layers=encoder_layers,
+            classification_layers=classification_layers,
             mamba_config=mamba_config,
             embedding_dim=embedding_dim,
             num_classes=num_classes,
@@ -113,28 +137,38 @@ def prep_cfg(cfg_path: Path, input_dim: int, num_classes: int, sequence_length: 
 
 def get_optuna_params(trial):
     dropout = 0.2
+    max_dim_size = MambaClassifier.max_dim_size
 
     # Mamba config
     d_state = 2 ** trial.suggest_int('d_state_pow', low=6, high=7)
-    headdim = 2 ** trial.suggest_int('headdim_pow', low=6, high=7)
+    headdim = 2 ** trial.suggest_int('headdim_pow', low=5, high=8)
 
     mamba_config = MambaConfig(
         d_state=d_state,
         headdim=headdim,
     )
 
-    # Encoder config
-    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 4)
-    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=5)
+    # Encoder Head
+    encoder_n_layers = trial.suggest_int('encoder_n_layers', 1, 2)
+    encoder_initial_dim = 2 ** trial.suggest_int('encoder_initial_dim_pow', low=2, high=8)
     encoder_expand_factor = 2 ** trial.suggest_int('encoder_expand_factor_pow', low=0, high=2)
-    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor)
+    encoder_dims = build_funnel_dims(encoder_initial_dim, encoder_n_layers, encoder_expand_factor, top=max_dim_size)
     encoder_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in encoder_dims]
 
     # Embedding dim
     embedding_dim = encoder_dims[-1]
 
+    # Classification Head
+    classification_n_layers = trial.suggest_int('classification_n_layers', 1, 2)
+    classification_initial_dim = 2 ** trial.suggest_int('classification_initial_dim_pow', low=7, high=8)
+    classification_expand_factor = 2 ** trial.suggest_int('classification_expand_factor_pow', low=-2, high=0)
+    classification_dims = build_funnel_dims(classification_initial_dim, classification_n_layers,
+                                            classification_expand_factor, silent=True, top=max_dim_size)
+    classification_layers = [MLPLayerConfig(out_dim=d, dropout=dropout) for d in classification_dims]
+
     return dict(
         encoder_layers=encoder_layers,
+        classification_layers=classification_layers,
         mamba_config=mamba_config,
         embedding_dim=embedding_dim,
     )
