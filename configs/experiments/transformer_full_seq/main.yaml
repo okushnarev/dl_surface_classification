@@ -2,13 +2,15 @@ defaults:
   dataset: main
   common:
     use_cuda: True
-    batch_size: 32768
+    seq_len: 30
   train:
     epochs: 150
     num_workers: 2
+    batch_size: 32768
   optimization:
-    n_trials: 50
-    epochs: 15
+    n_trials: 80
+    epochs: 20
+    batch_size: 4096
 
 experiments:
   - name: transformer_full_seq_kalman_type_1
