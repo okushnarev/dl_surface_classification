@@ -11,6 +11,7 @@ defaults:
     n_trials: 80
     epochs: 20
     batch_size: 4096
+    val_size: 0.3
 
 experiments:
   - name: transformer_kalman_type_1
