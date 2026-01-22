@@ -2,14 +2,15 @@ defaults:
   dataset: boreal
   common:
     use_cuda: True
-    batch_size: 32768
     seq_len: 50
   train:
     epochs: 150
     num_workers: 2
+    batch_size: 32768
   optimization:
     n_trials: 80
-    epochs: 15
+    epochs: 20
+    batch_size: 4096
 
 experiments:
   - name: mamba_no_filter_type_1
