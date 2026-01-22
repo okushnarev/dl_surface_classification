@@ -29,6 +29,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
 
     group.add_argument('--epochs', type=int, default=15)
     group.add_argument('--seq_len', type=int, default=10)
+    group.add_argument('--val_size', type=float, default=0.1)
     group.add_argument('--batch_size', type=int, default=32768)
     group.add_argument('--seed', type=int, default=69)
     group.add_argument('--filter', type=str, default='no_filter')
@@ -157,7 +158,7 @@ def run_optimization(args):
     # Split proxy in train test
     df_train, df_val = train_test_split(
         df_proxy,
-        test_size=0.1,
+        test_size=args.val_size,
         random_state=69,
         shuffle=True,
         stratify=df_proxy[target_col],
