@@ -113,7 +113,7 @@ def get_optuna_params(trial):
     # Embedding dim
     embedding_dim = encoder_dims[-1]
 
-    rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=6, high=10)
+    rnn_hidden_dim = 2 ** trial.suggest_int('rnn_hidden_dim_pow', low=5, high=8)
 
     return dict(
         encoder_layers=encoder_layers,
