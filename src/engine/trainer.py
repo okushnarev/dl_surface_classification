@@ -156,7 +156,7 @@ def train_model(args):
             checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
             start_epoch = checkpoint['epoch']
 
-        print(f'\n--- Starting Training: {args.nn_name} ---')
+        print(f'\n--- Starting Training: {args.nn_name.upper()}. Batch size: {batch_size} ---')
         best_acc = 0
 
         for epoch in range(start_epoch, args.epochs):
