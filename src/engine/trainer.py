@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from accelerate import find_executable_batch_size
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, TensorDataset
@@ -94,21 +95,6 @@ def train_model(args):
     y_test = torch.tensor(y_test, dtype=torch.long)
     test_dataset = TensorDataset(X_test, y_test)
 
-    # Create dataLoaders
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        pin_memory=False if device == torch.device('cpu') else True,
-        num_workers=args.num_workers,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.batch_size,
-        shuffle=False
-    )
-
     # Initialize model
     components = get_model_components(args.nn_name)
     prep_cfg_func = components['prep_config']
@@ -137,65 +123,84 @@ def train_model(args):
         sequence_length=args.seq_len
     )
 
-    model = ModelClass(**cfg['model']).to(device)
-    optimizer = optim.AdamW(
-        model.parameters(),
-        lr=cfg['optimizer']['start_lr'],
-        weight_decay=cfg['optimizer']['weight_decay']
-    )
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
-    criterion = nn.CrossEntropyLoss()
+    @find_executable_batch_size(starting_batch_size=args.batch_size)
+    def train_loop(batch_size):
+        # Create dataLoaders
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            pin_memory=False if device == torch.device('cpu') else True,
+            num_workers=args.num_workers,
+        )
 
-    # Training Loop
-    start_epoch = 0
-    if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
-        print('Resuming training from checkpoint')
-        checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
-        start_epoch = checkpoint['epoch']
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=False
+        )
 
-    print(f'\n--- Starting Training: {args.nn_name} ---')
-    best_acc = 0
+        model = ModelClass(**cfg['model']).to(device)
+        optimizer = optim.AdamW(
+            model.parameters(),
+            lr=cfg['optimizer']['start_lr'],
+            weight_decay=cfg['optimizer']['weight_decay']
+        )
+        scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
+        criterion = nn.CrossEntropyLoss()
 
-    for epoch in range(start_epoch, args.epochs):
-        model.train()
-        epoch_loss = 0
-        for sequences, labels in train_loader:
-            sequences = sequences.to(device, non_blocking=True)
-            labels = labels.to(device, non_blocking=True)
+        # Training Loop
+        start_epoch = 0
+        if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
+            print('Resuming training from checkpoint')
+            checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
+            start_epoch = checkpoint['epoch']
 
-            outputs = model(sequences)
-            loss = criterion(outputs, labels)
-            epoch_loss += loss.item()
+        print(f'\n--- Starting Training: {args.nn_name} ---')
+        best_acc = 0
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        for epoch in range(start_epoch, args.epochs):
+            model.train()
+            epoch_loss = 0
+            for sequences, labels in train_loader:
+                sequences = sequences.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
 
-        epoch_loss /= len(train_loader)
-        scheduler.step(epoch_loss)
+                outputs = model(sequences)
+                loss = criterion(outputs, labels)
+                epoch_loss += loss.item()
 
-        current_lr = optimizer.param_groups[0]['lr']
-        print(f'Epoch [{epoch + 1}/{args.epochs}] Loss: {epoch_loss:.6f} LR: {current_lr:.2e}')
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-        # Test
-        if epoch % args.test_every == 0 or epoch == args.epochs - 1:
-            model.eval()
-            correct, total = 0, 0
-            with torch.no_grad():
-                for sequences, labels in test_loader:
-                    sequences, labels = sequences.to(device), labels.to(device)
-                    outputs = model(sequences)
-                    predicted = torch.argmax(outputs, 1)
-                    total += labels.size(0)
-                    correct += (predicted == labels).sum().item()
+            epoch_loss /= len(train_loader)
+            scheduler.step(epoch_loss)
 
-            test_acc = correct / total
-            print(f'Accuracy on the test set: {100 * test_acc:.2f} %')
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Epoch [{epoch + 1}/{args.epochs}] Loss: {epoch_loss:.6f} LR: {current_lr:.2e}')
 
-            if test_acc > best_acc:
-                best_acc = test_acc
-                print('The best accuracy found')
-                save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'best.pt')
+            # Test
+            if epoch % args.test_every == 0 or epoch == args.epochs - 1:
+                model.eval()
+                correct, total = 0, 0
+                with torch.no_grad():
+                    for sequences, labels in test_loader:
+                        sequences, labels = sequences.to(device), labels.to(device)
+                        outputs = model(sequences)
+                        predicted = torch.argmax(outputs, 1)
+                        total += labels.size(0)
+                        correct += (predicted == labels).sum().item()
 
-        if epoch % args.save_every == 0 or epoch == args.epochs - 1:
-            save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'last.pt')
+                test_acc = correct / total
+                print(f'Accuracy on the test set: {100 * test_acc:.2f} %')
+
+                if test_acc > best_acc:
+                    best_acc = test_acc
+                    print('The best accuracy found')
+                    save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'best.pt')
+
+            if epoch % args.save_every == 0 or epoch == args.epochs - 1:
+                save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'last.pt')
+
+    train_loop()
