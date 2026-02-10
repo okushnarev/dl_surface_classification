@@ -10,15 +10,15 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from optuna import Trial
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, TensorDataset
 
-from src.data.processing import create_sequences
+from src.data.processing import chunk_split, create_sequences
 from src.models.factory import get_model_components
 from src.utils.paths import ProjectPaths
+from src.utils.vars import CHUNK_COL
 
 
 def add_optimizer_args(parent_parser: argparse.ArgumentParser):
@@ -147,7 +147,7 @@ def run_optimization(args):
         dataset_config = json.load(f)
 
     # Extract configuration details
-    group_cols = dataset_config['metadata']['group_cols']
+    group_cols = dataset_config['metadata']['group_cols'] + [CHUNK_COL]
     target_col = dataset_config['metadata']['target_col']
     feature_cols = dataset_config['features'][args.filter][args.ds_type]
 
@@ -156,16 +156,14 @@ def run_optimization(args):
     df_proxy = pd.read_csv(data_dir / 'proxy.csv')
 
     # Split proxy in train test
-    df_train, df_val = train_test_split(
+    df_train, df_val = chunk_split(
         df_proxy,
+        group_cols=group_cols,
+        target_col=target_col,
+        # kwargs
         test_size=args.val_size,
-        random_state=69,
-        shuffle=True,
-        stratify=df_proxy[target_col],
+        random_state=args.seed,
     )
-
-    df_train = df_train.sort_index()
-    df_val = df_val.sort_index()
 
     # Encode labels
     label_encoder = LabelEncoder()

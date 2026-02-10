@@ -16,6 +16,7 @@ from src.data.processing import create_sequences
 from src.models.factory import get_model_components
 from src.utils.io import load_checkpoint, save_checkpoint
 from src.utils.paths import ProjectPaths
+from src.utils.vars import CHUNK_COL
 
 
 def add_trainer_args(parent_parser: argparse.ArgumentParser):
@@ -62,7 +63,7 @@ def train_model(args):
         datasets_cfg = json.load(f)
 
     # Params
-    group_cols = datasets_cfg['metadata']['group_cols']
+    group_cols = datasets_cfg['metadata']['group_cols'] + [CHUNK_COL]
     target_col = datasets_cfg['metadata']['target_col']
     feature_cols = datasets_cfg['features'][args.filter][args.ds_type]
 

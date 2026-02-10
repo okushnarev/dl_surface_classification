@@ -13,6 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
+from src.utils.vars import CHUNK_COL
 from src.utils.hashing import check_cache, compose_metadata
 from src.utils.paths import ProjectPaths
 from src.utils.io import save_csv_and_metadata
@@ -51,6 +52,8 @@ def main():
         ds_config = json.load(f)
 
     group_cols = ds_config['metadata']['group_cols']
+    if args.subset in ['train', 'test']:
+        group_cols = group_cols + [CHUNK_COL]
     info_cols = ds_config['metadata']['info_cols']
     target_col = ds_config['metadata']['target_col']
     features_map = ds_config['features']
@@ -59,7 +62,7 @@ def main():
     if args.ds_path is not None:
         csv_path = ProjectPaths.get_root() / args.ds_path
         args.subset = csv_path.stem
-    elif args.subset in ['test', 'val', 'train']:
+    elif args.subset in ['train', 'test']:
         data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
         csv_path = data_dir / f'{args.subset}.csv'
     elif args.subset == 'full':
