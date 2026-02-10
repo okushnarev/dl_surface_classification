@@ -65,7 +65,6 @@ def _execute_trial_loop(trial: Trial,
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory,
                                   num_workers=_num_workers)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=_num_workers)
-
         optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
         criterion = nn.CrossEntropyLoss()
@@ -237,7 +236,7 @@ def run_optimization(args):
             sequence_length=args.seq_len,
             epochs=args.epochs,
             starting_batch_size=args.batch_size,
-            num_workers=num_workers,
+            num_workers=args.num_workers,
             device=device,
         ),
         n_trials=args.n_trials,
