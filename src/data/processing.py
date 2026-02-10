@@ -1,5 +1,9 @@
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
+from sklearn.model_selection import train_test_split
+
+from src.utils.vars import CHUNK_COL
 
 
 def create_sequences(
@@ -56,3 +60,32 @@ def create_sequences(
         return np.array(sequences), np.array(labels), np.array(infos)
     else:
         return np.array(sequences), np.array(labels)
+
+
+def chunk_split(
+        df: DataFrame,
+        group_cols: list[str],
+        target_col: str,
+        **kwargs) -> tuple[DataFrame, DataFrame]:
+
+    df = df.copy()
+
+    # Prepare group cols
+    if CHUNK_COL not in group_cols:
+        group_cols = group_cols + [CHUNK_COL]
+    if target_col not in group_cols:
+        group_cols = [target_col] + group_cols
+
+    # Split
+    chunk_metadata = df[group_cols].drop_duplicates()
+    train_ids, test_ids = train_test_split(
+        chunk_metadata,
+        stratify=chunk_metadata[target_col],
+        **kwargs
+    )
+
+    # Compose dataframes
+    train_df = df.merge(train_ids, on=group_cols, how='inner')
+    test_df = df.merge(test_ids, on=group_cols, how='inner')
+
+    return train_df, test_df
