@@ -9,6 +9,7 @@ import optuna
 import pandas as pd
 import torch
 import torch.nn as nn
+from accelerate import find_executable_batch_size
 from optuna import Trial
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim import AdamW
@@ -31,6 +32,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--seq_len', type=int, default=10)
     group.add_argument('--val_size', type=float, default=0.1)
     group.add_argument('--batch_size', type=int, default=32768)
+    group.add_argument('--num_workers', type=int, default=2)
     group.add_argument('--seed', type=int, default=69)
     group.add_argument('--filter', type=str, default='no_filter')
     group.add_argument('--ds_type', type=str, default='type_1')
@@ -39,59 +41,80 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     return parent_parser
 
 
-def _execute_trial_loop(trial: Trial, model, train_loader, val_loader, epochs, lr, weight_decay, device):
+def _execute_trial_loop(trial: Trial,
+                        model,
+                        train_dataset,
+                        val_dataset,
+                        epochs,
+                        starting_batch_size,
+                        lr,
+                        weight_decay,
+                        num_workers,
+                        device):
     """
     Internal execution loop specifically for Optuna trials
     Handles forward passes, backprop, pruning, and reporting
-    Does not save checkpoints or logs to disk to maximize speed
+    Handles CUDA OOM by reducing batch size
     """
-    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
-    criterion = nn.CrossEntropyLoss()
 
-    val_loss = np.inf
+    @find_executable_batch_size(starting_batch_size=starting_batch_size)
+    def train_loop(batch_size):
+        # Create a DataLoader
+        pin_memory = False if device == torch.device('cpu') else True
+        _num_workers = 0 if device == torch.device('cpu') else num_workers
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory,
+                                  num_workers=_num_workers)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=_num_workers)
 
-    for epoch in range(epochs):
-        # Training
-        model.train()
-        train_loss = 0
-        for sequences, labels in train_loader:
-            sequences = sequences.to(device, non_blocking=True)
-            labels = labels.to(device, non_blocking=True)
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
+        criterion = nn.CrossEntropyLoss()
 
-            outputs = model(sequences)
-            loss = criterion(outputs, labels)
-            train_loss += loss.item()
+        val_loss = np.inf
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        train_loss /= len(train_loader)
-        scheduler.step(train_loss)
-
-        # Validation
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for sequences, labels in val_loader:
+        for epoch in range(epochs):
+            # Training
+            model.train()
+            train_loss = 0
+            for sequences, labels in train_loader:
                 sequences = sequences.to(device, non_blocking=True)
                 labels = labels.to(device, non_blocking=True)
 
                 outputs = model(sequences)
                 loss = criterion(outputs, labels)
-                val_loss += loss.item()
+                train_loss += loss.item()
 
-        val_loss /= len(val_loader)
-        trial.report(val_loss, epoch)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            train_loss /= len(train_loader)
+            scheduler.step(train_loss)
 
-        if trial.should_prune():
-            raise optuna.TrialPruned()
+            # Validation
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for sequences, labels in val_loader:
+                    sequences = sequences.to(device, non_blocking=True)
+                    labels = labels.to(device, non_blocking=True)
 
-    return val_loss
+                    outputs = model(sequences)
+                    loss = criterion(outputs, labels)
+                    val_loss += loss.item()
+
+            val_loss /= len(val_loader)
+            trial.report(val_loss, epoch)
+
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+
+        return val_loss
+
+    return train_loop()
 
 
-def generic_objective(trial, net_name, train_loader, val_loader, input_dim, num_classes, sequence_length, device,
-                      epochs):
+def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, num_classes, sequence_length, epochs,
+                      starting_batch_size, num_workers, device):
     """
     The universal objective function used by Optuna
     Constructs the specific model using the Factory and runs the optimization loop
@@ -125,11 +148,13 @@ def generic_objective(trial, net_name, train_loader, val_loader, input_dim, num_
     loss = _execute_trial_loop(
         trial=trial,
         model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
+        train_dataset=train_dataset,
+        val_dataset=val_dataset,
         epochs=epochs,
+        starting_batch_size=starting_batch_size,
         lr=lr,
         weight_decay=weight_decay,
+        num_workers=num_workers,
         device=device
     )
 
@@ -192,14 +217,6 @@ def run_optimization(args):
         torch.tensor(y_val, dtype=torch.long)
     )
 
-    # Create a DataLoader
-    pin_memory = False if device == torch.device('cpu') else True
-    num_workers = 0 if device == torch.device('cpu') else 2
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=pin_memory,
-                              num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=pin_memory,
-                            num_workers=num_workers)
-
     # Initialize and run the Optuna study
     study = optuna.create_study(
         direction='minimize',
@@ -213,13 +230,15 @@ def run_optimization(args):
         partial(
             generic_objective,
             net_name=args.nn_name,
-            train_loader=train_loader,
-            val_loader=val_loader,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
             input_dim=len(feature_cols),
             num_classes=num_classes,
             sequence_length=args.seq_len,
+            epochs=args.epochs,
+            starting_batch_size=args.batch_size,
+            num_workers=num_workers,
             device=device,
-            epochs=args.epochs
         ),
         n_trials=args.n_trials,
         gc_after_trial=True,
