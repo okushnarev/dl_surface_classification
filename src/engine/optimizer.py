@@ -30,7 +30,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
 
     group.add_argument('--epochs', type=int, default=15)
     group.add_argument('--seq_len', type=int, default=10)
-    group.add_argument('--val_size', type=float, default=0.1)
+    group.add_argument('--val_size', type=float, default=0.2)
     group.add_argument('--batch_size', type=int, default=32768)
     group.add_argument('--num_workers', type=int, default=2)
     group.add_argument('--seed', type=int, default=69)
