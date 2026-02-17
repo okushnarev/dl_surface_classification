@@ -2,7 +2,7 @@ defaults:
   dataset: boreal
   common:
     use_cuda: True
-    seq_len: 50
+    seq_len: 5
   train:
     epochs: 150
     num_workers: 2

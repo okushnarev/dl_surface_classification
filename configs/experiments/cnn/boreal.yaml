@@ -3,13 +3,13 @@ defaults:
   common:
     use_cuda: True
     batch_size: 32768
-    seq_len: 50
+    seq_len: 5
   train:
     epochs: 150
     num_workers: 2
   optimization:
     n_trials: 80
-    epochs: 15
+    epochs: 20
 
 experiments:
   - name: cnn_no_filter_type_1
