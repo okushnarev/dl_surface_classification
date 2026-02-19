@@ -46,12 +46,15 @@ def main():
                                     # kwargs
                                     train_size=0.8,
                                     random_state=args.seed)
-    df_proxy, _ = chunk_split(df_train,
+    if args.proxy_size < 1:
+        df_proxy, _ = chunk_split(df_train,
                               group_cols=group_cols,
                               target_col=target_col,
                               # kwargs
                               train_size=args.proxy_size,
                               random_state=args.seed)
+    else:
+        df_proxy = df_train
 
     output_path = ProjectPaths.get_processed_data_dir(args.dataset)
     output_path.mkdir(parents=True, exist_ok=True)
