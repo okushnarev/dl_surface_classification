@@ -151,13 +151,15 @@ def train_model(args):
 
         # Training Loop
         start_epoch = 0
+        best_acc = 0
+
         if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
             print('Resuming training from checkpoint')
             checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
             start_epoch = checkpoint['epoch']
+            best_acc = checkpoint.get('best_acc', 0)
 
         print(f'\n--- Starting Training: {args.nn_name.upper()}. Batch size: {batch_size} ---')
-        best_acc = 0
 
         for epoch in range(start_epoch, args.epochs):
             model.train()
@@ -198,9 +200,9 @@ def train_model(args):
                 if test_acc > best_acc:
                     best_acc = test_acc
                     print('The best accuracy found')
-                    save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'best.pt')
+                    save_checkpoint(model, optimizer, epoch, epoch_loss, best_acc, ckpt_path / 'best.pt')
 
             if epoch % args.save_every == 0 or epoch == args.epochs - 1:
-                save_checkpoint(model, optimizer, epoch, epoch_loss, ckpt_path / 'last.pt')
+                save_checkpoint(model, optimizer, epoch, epoch_loss, best_acc, ckpt_path / 'last.pt')
 
     train_loop()

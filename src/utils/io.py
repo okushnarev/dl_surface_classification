@@ -5,7 +5,7 @@ import torch
 import json
 
 
-def save_checkpoint(model, optimizer, epoch, loss, filepath):
+def save_checkpoint(model, optimizer, epoch, loss, best_accuracy, filepath):
     """Saves a checkpoint for resuming training."""
 
     print(f'Saving checkpoint to {filepath}')
@@ -15,6 +15,7 @@ def save_checkpoint(model, optimizer, epoch, loss, filepath):
         'model_state_dict':     model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss':                 loss,
+        'best_accuracy':        best_accuracy,
     }
 
     torch.save(checkpoint, filepath)
@@ -51,5 +52,3 @@ def save_csv_and_metadata(df: pd.DataFrame, metadata: dict, filepath: Path, **kw
 
     with open(filepath.with_suffix('.json'), 'w') as file:
         json.dump(metadata, file, indent=2)
-
-
