@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from src.models.schemas import MLPLayerConfig, build_funnel_dims, build_mlp_from_config
+from src.modules.positional_encoder import PositionalEncoding
 
 
 class Transformer(nn.Module):
@@ -28,6 +29,9 @@ class Transformer(nn.Module):
 
         # CLS token
         self.cls_token = nn.Parameter(torch.randn(1, 1, embedding_dim))
+
+        # Positional encoder
+        self.pos_encoder = PositionalEncoding(embedding_dim)
 
         # Transformer
         transformer_layer = nn.TransformerEncoderLayer(
@@ -60,6 +64,7 @@ class Transformer(nn.Module):
         x = self.encoder(x)
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
+        x = self.pos_encoder(x)
         x = self.transformer(x)
         x = self.classifier(x[:, 0, :])
         return x
