@@ -40,9 +40,20 @@ class Transformer(nn.Module):
             transformer_layer,
             num_layers=num_transformer_layers
         )
+        self.init_transformer_weights()
 
         # Classification head
         self.classifier = build_mlp_from_config(classification_layers, embedding_dim, num_classes)
+
+    def init_transformer_weights(self):
+        for module in self.transformer.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0.0)
+            elif isinstance(module, nn.LayerNorm):
+                nn.init.constant_(module.weight, 1.0)
+                nn.init.constant_(module.bias, 0.0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
