@@ -87,11 +87,11 @@ def train_model(args):
     print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
 
     # Create datasets
-    X_train = torch.tensor(X_train, dtype=torch.float32)
+    X_train = torch.tensor(X_train, dtype=torch.bfloat16)
     y_train = torch.tensor(y_train, dtype=torch.long)
     train_dataset = TensorDataset(X_train, y_train)
 
-    X_test = torch.tensor(X_test, dtype=torch.float32)
+    X_test = torch.tensor(X_test, dtype=torch.bfloat16)
     y_test = torch.tensor(y_test, dtype=torch.long)
     test_dataset = TensorDataset(X_test, y_test)
 
@@ -140,7 +140,7 @@ def train_model(args):
             shuffle=False
         )
 
-        model = ModelClass(**cfg['model']).to(device)
+        model = ModelClass(**cfg['model']).to(device, dtype=torch.bfloat16)
         optimizer = optim.AdamW(
             model.parameters(),
             lr=cfg['optimizer']['start_lr'],

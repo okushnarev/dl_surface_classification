@@ -87,7 +87,7 @@ def run_inference(
     )
 
     # Create loader
-    X = torch.tensor(X, dtype=torch.float32)
+    X = torch.tensor(X, dtype=torch.bfloat16)
     y = torch.tensor(y, dtype=torch.long)
     dataset = TensorDataset(X, y)
 

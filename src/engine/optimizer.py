@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from accelerate import find_executable_batch_size
+from numpy import dtype
 from optuna import Trial
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.optim import AdamW
@@ -141,7 +142,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
             model_kwargs[k] = v
 
     # Create model
-    model = ModelClass(**model_kwargs).to(device)
+    model = ModelClass(**model_kwargs).to(device, dtype=torch.bfloat16)
 
     # Run the execution loop
     loss = _execute_trial_loop(
@@ -208,11 +209,11 @@ def run_optimization(args):
 
     # Convert to PyTorch TensorDataset
     train_dataset = TensorDataset(
-        torch.tensor(X_train, dtype=torch.float32),
+        torch.tensor(X_train, dtype=torch.bfloat16),
         torch.tensor(y_train, dtype=torch.long)
     )
     val_dataset = TensorDataset(
-        torch.tensor(X_val, dtype=torch.float32),
+        torch.tensor(X_val, dtype=torch.bfloat16),
         torch.tensor(y_val, dtype=torch.long)
     )
 
