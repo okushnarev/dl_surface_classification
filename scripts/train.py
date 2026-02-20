@@ -131,7 +131,12 @@ def run_batch_mode(args):
             # Non-blocking launch
             print(f'Launching: {exp_name} -> Logs: {log_path}')
             # Redirect stdout and stderr to file
-            f_out = open(log_path, 'w')
+            # Append file if restart behavior is 'resume'
+            restart_behavior = run_config.get('restart_behavior', 'restart')
+            if restart_behavior == 'resume':
+                f_out = open(log_path, 'a')
+            else:
+                f_out = open(log_path, 'w')
             proc = subprocess.Popen(cmd, stdout=f_out, stderr=subprocess.STDOUT)
 
             active_processes.append((proc, exp_name, f_out))
