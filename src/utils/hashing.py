@@ -24,7 +24,7 @@ def get_model_hash(model: torch.nn.Module) -> str:
         hasher.update(key.encode('utf-8'))
 
         # Update hash with tensor values
-        chunk = tensor.cpu().numpy().tobytes()
+        chunk = tensor.cpu().to(torch.float32).numpy().tobytes()
         hasher.update(chunk)
 
     return hasher.hexdigest()
