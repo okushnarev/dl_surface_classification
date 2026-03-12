@@ -216,6 +216,8 @@ def create_bar_plot(
         return None
 
     df_bar = pd.DataFrame(rows)
+    # Accuracy stats
+    min_acc = df_bar['accuracy'].min()
 
     # Plot
     fig = bar_plot(
@@ -227,7 +229,7 @@ def create_bar_plot(
         color='is_mem',
         color_discrete_map={True: '#EF553B', False: '#636EFA'},
         template='plotly_white',
-        range_y=[0, 1.01],
+        range_y=[min_acc - 0.02, 1.01],
         title='Linear Motion (Mean Accuracy)'
     )
     fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
@@ -288,6 +290,9 @@ def create_trajectory_comparison(
     ))
     df_acc = pd.concat([df_acc, baseline], ignore_index=True)
 
+    # Accuracy stats
+    min_acc = df_acc['accuracy'].min()
+
     # Sorting
     df_acc['mean_acc'] = df_acc.groupby('name')['accuracy'].transform('mean')
     df_acc = df_acc.sort_values('mean_acc', ascending=False)
@@ -302,7 +307,7 @@ def create_trajectory_comparison(
         color='ds_type',
         template='plotly_white',
         barmode='group',
-        range_y=[0, 1.01],
+        range_y=[min_acc - 0.05, 1.01],
         category_orders={'name': list(sorted_names)},
         title='Square and Circle Trajectories (Mean Accuracy)'
     )
