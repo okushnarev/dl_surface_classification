@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
                         help='Data subset to evaluate on')
     parser.add_argument('--top', type=int, default=-1, help='Top N results to show')
+    parser.add_argument('--raster_out', action='store_true', help='Output raster image along with html')
     return parser.parse_args()
 
 
@@ -310,6 +311,15 @@ def create_trajectory_comparison(
     return fig
 
 
+def write_image(fig, path, name, raster_out: bool = False):
+    output_path = path / f'{name}.html'
+    fig.write_html(output_path, include_plotlyjs='cdn')
+    print(f'Saved: {output_path}')
+    if raster_out:
+        output_path = path / f'{name}.png'
+        fig.write_image(output_path, width=1100, height=600, scale=3)
+        print(f'Saved: {output_path}')
+
 
 def main():
     args = parse_args()
@@ -370,9 +380,11 @@ def main():
         colors,
     )
     if radial_fig:
-        output_path = figure_dir / f'radial.html'
-        radial_fig.write_html(output_path, include_plotlyjs='cdn')
-        print(f'Saved: {output_path}')
+        write_image(
+            radial_fig,
+            path=figure_dir,
+            name='radial',
+        )
 
     # Bar plots
     bar_fig = create_bar_plot(
@@ -380,9 +392,12 @@ def main():
         mem_df,
     )
     if bar_fig:
-        output_path = figure_dir / f'bar.html'
-        bar_fig.write_html(output_path, include_plotlyjs='cdn')
-        print(f'Saved: {output_path}')
+        write_image(
+            bar_fig,
+            path=figure_dir,
+            name='bar',
+            raster_out=args.raster_out,
+        )
 
     # Square circle
     square_circle_fig = create_trajectory_comparison(
@@ -390,10 +405,13 @@ def main():
         results_dir,
         top_n=args.top
     )
-    output_path = figure_dir / f'bar_square_circle.html'
     if square_circle_fig:
-        square_circle_fig.write_html(output_path, include_plotlyjs='cdn')
-        print(f'Saved: {output_path}')
+        write_image(
+            square_circle_fig,
+            path=figure_dir,
+            name='bar_square_circle',
+            raster_out=args.raster_out,
+        )
 
 
 if __name__ == '__main__':
