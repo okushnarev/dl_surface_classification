@@ -129,8 +129,6 @@ def radial_barplot(
         cols=cols,
         subplot_titles=surfs,
         row_titles=list(plot_data.keys()),
-        horizontal_spacing=0.05,
-        vertical_spacing=min(0.12, 1 / (rows - 1) if rows > 1 else 1),
         specs=[[{'type': 'polar'} for _ in range(cols)] for _ in range(rows)]
     )
 
