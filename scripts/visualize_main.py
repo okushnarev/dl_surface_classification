@@ -53,7 +53,7 @@ def load_memory_baseline(dataset_name):
     df = pd.read_csv(mem_file)
     # Ensure columns match expectations
     if 'cls_memory' in df.columns:
-        df['predictions'] = df['cls_memory']
+        df['prediction'] = df['cls_memory']
     return df
 
 
@@ -108,7 +108,7 @@ def radial_barplot(
 
     # Process Baseline
     if baseline_df is not None:
-        baseline_df['is_correct'] = baseline_df['surf'] == baseline_df['predictions']
+        baseline_df['is_correct'] = baseline_df['surf'] == baseline_df['prediction']
         mem_acc = baseline_df.groupby(['surf', 'movedir'])['is_correct'].mean().reset_index(name='accuracy')
         plot_data['Mem'] = mem_acc
 
@@ -202,7 +202,7 @@ def mean_acc_barplot(
 
     # Process Memory Baseline
     if baseline_df is not None:
-        mem_acc = accuracy_score(baseline_df['surf'], baseline_df['predictions'])
+        mem_acc = accuracy_score(baseline_df['surf'], baseline_df['prediction'])
         rows.append({'Classifier': 'Mem', 'accuracy': mem_acc, 'is_mem': True})
 
     # Process Models
@@ -370,6 +370,9 @@ def main():
     args = parse_args()
     dataset = 'main'  # This script is specific to Main
 
+    # Load baseline df
+    mem_df = load_memory_baseline(dataset)
+
     # Load Configs
     ds_cfg_path = ProjectPaths.get_dataset_config_path(dataset)
     with open(ds_cfg_path) as f:
@@ -405,6 +408,11 @@ def main():
             recall_by_surf[pretty_name] = _recall
             precision_by_surf[pretty_name] = _precision
     surfs = list(surfs)
+
+    # Get stats from baseline df
+    mem_acc_by_dir, mem_mean_acc, mem_precision, mem_recall = get_stats_from_df(mem_df)
+    recall_by_surf['Mem'] = mem_recall
+    precision_by_surf['Mem'] = mem_precision
 
     # Sort keys by accuracy descending
     # Filter top n if args.top > 0
@@ -442,7 +450,6 @@ def main():
     figure_dir.mkdir(parents=True, exist_ok=True)
 
     # Radial plots
-    mem_df = load_memory_baseline(dataset)
     radial_fig = radial_barplot(
         accuracy_by_dir,
         mem_df,
