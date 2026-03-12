@@ -449,6 +449,7 @@ def main():
             radial_fig,
             path=figure_dir,
             name='radial',
+            raster_out=False,
         )
 
     # Bar plots
