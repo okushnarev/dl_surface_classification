@@ -237,7 +237,6 @@ def create_bar_plot(
     return fig
 
 
-
 def create_trajectory_comparison(
         exp_metadata: dict[str, tuple[Any]],
         cache_dir: Path,
