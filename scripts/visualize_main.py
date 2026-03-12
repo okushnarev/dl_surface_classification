@@ -300,7 +300,7 @@ def create_trajectory_comparison(
 
     fig = bar_plot(
         df_acc,
-        threshold=8*2,
+        threshold=8 * 2,
         x='name',
         y='accuracy',
         text='accuracy',
