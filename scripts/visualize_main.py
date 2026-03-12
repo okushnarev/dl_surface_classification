@@ -405,10 +405,11 @@ def main():
 
     # Sort keys by accuracy descending
     # Filter top n if args.top > 0
-    sorted_keys = sorted(mean_accuracy, key=mean_accuracy.get, reverse=True)[:args.top if args.top > 0 else None]
+    model_order = sorted(mean_accuracy, key=mean_accuracy.get, reverse=True)[:args.top if args.top > 0 else None]
 
-    accuracy_by_dir = {k: accuracy_by_dir[k] for k in sorted_keys}
-    mean_accuracy = {k: mean_accuracy[k] for k in sorted_keys}
+    accuracy_by_dir = {k: accuracy_by_dir[k] for k in model_order}
+    mean_accuracy = {k: mean_accuracy[k] for k in model_order}
+
     # Process stats
     # Recall
     recall_df = pd.DataFrame(recall_by_surf).T.reset_index(names=['model'])
