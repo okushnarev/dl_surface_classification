@@ -91,7 +91,7 @@ def get_experiment_metadata(nets, config_name):
     return metadata_map
 
 
-def create_radial_plot(
+def radial_barplot(
         acc_summaries: dict[str, DataFrame],
         baseline_df: DataFrame,
         surfs: Collection[str],
@@ -190,7 +190,7 @@ def create_radial_plot(
     return fig
 
 
-def create_bar_plot(
+def mean_acc_barplot(
         model_accuracies: dict[str, DataFrame],
         baseline_df: DataFrame,
 ) -> Optional[Figure]:
@@ -237,7 +237,7 @@ def create_bar_plot(
     return fig
 
 
-def create_trajectory_comparison(
+def trajectory_comparison_barplot(
         exp_metadata: dict[str, tuple[Any]],
         cache_dir: Path,
         top_n: int = -1) -> Optional[Figure]:
@@ -377,7 +377,7 @@ def main():
 
     # Radial plots
     mem_df = load_memory_baseline(dataset)
-    radial_fig = create_radial_plot(
+    radial_fig = radial_barplot(
         accuracy_by_dir,
         mem_df,
         surfs,
@@ -391,7 +391,7 @@ def main():
         )
 
     # Bar plots
-    bar_fig = create_bar_plot(
+    bar_fig = mean_acc_barplot(
         mean_accuracy,
         mem_df,
     )
@@ -404,7 +404,7 @@ def main():
         )
 
     # Square circle
-    square_circle_fig = create_trajectory_comparison(
+    square_circle_fig = trajectory_comparison_barplot(
         exp_meta,
         results_dir,
         top_n=args.top
