@@ -347,6 +347,15 @@ def trajectory_comparison_barplot(
     return fig
 
 
+def get_stats_from_df(df: pd.DataFrame):
+    df['is_correct'] = df['surf'] == df['prediction']
+    _acc_by_dir = df.groupby(['surf', 'movedir'])['is_correct'].mean().reset_index(name='accuracy')
+    _recall = dict(df.groupby('surf')['is_correct'].mean())
+    _precision = dict(df.groupby('prediction')['is_correct'].mean())
+    _mean_acc = df['is_correct'].mean()
+    return _acc_by_dir, _mean_acc, _precision, _recall
+
+
 def write_image(fig, path, name, raster_out: bool = False):
     output_path = path / f'{name}.html'
     fig.write_html(output_path, include_plotlyjs='cdn')
@@ -388,11 +397,7 @@ def main():
             df = pd.read_csv(csv_path)
             surfs |= set(df['surf'])
 
-            df['is_correct'] = df['surf'] == df['prediction']
-            _acc_by_dir = df.groupby(['surf', 'movedir'])['is_correct'].mean().reset_index(name='accuracy')
-            _recall = dict(df.groupby('surf')['is_correct'].mean())
-            _precision = dict(df.groupby('prediction')['is_correct'].mean())
-            _mean_acc = df['is_correct'].mean()
+            _acc_by_dir, _mean_acc, _precision, _recall = get_stats_from_df(df)
 
             pretty_name = format_model_name(net, f_type, ds_type)
             accuracy_by_dir[pretty_name] = _acc_by_dir
