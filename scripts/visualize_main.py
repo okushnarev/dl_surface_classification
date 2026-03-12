@@ -237,6 +237,40 @@ def mean_acc_barplot(
     return fig
 
 
+def grouped_stats_barplot(
+        stats_df: DataFrame,
+        acc_order: list[str],
+        model_order: list[str],
+        palette: dict[str, str],
+        stat_name: str,
+) -> Optional[Figure]:
+    """
+    Generates the Stats  bar chart (Recall, Precision, F1 Score).
+    """
+    print(f'Creating {stat_name.capitalize()} Bar Plot')
+
+    # Min stat
+    min_stat = stats_df[stat_name].min()
+
+    # Plot
+    fig = px.bar(
+        stats_df,
+        x='model',
+        y=stat_name,
+        color='surf',
+        barmode='group',
+        range_y=[min_stat - 0.02, 1],
+        category_orders={'surf': acc_order, 'model': model_order},
+        color_discrete_map=palette,
+        text_auto='.4f',
+        text=stat_name,
+        template='plotly_white',
+        title=f'Linear Motion ({stat_name})'
+    )
+
+    return fig
+
+
 def trajectory_comparison_barplot(
         exp_metadata: dict[str, tuple[Any]],
         cache_dir: Path,
@@ -346,6 +380,8 @@ def main():
     # Aggregate data
     accuracy_by_dir = {}
     mean_accuracy = {}
+    recall_by_surf = {}
+    precision_by_surf = {}
     surfs = set()
     for exp_name, (net, f_type, ds_type) in exp_meta.items():
         csv_path = results_dir / f'{exp_name}.csv'
@@ -356,11 +392,15 @@ def main():
 
             df['is_correct'] = df['surf'] == df['prediction']
             _acc_by_dir = df.groupby(['surf', 'movedir'])['is_correct'].mean().reset_index(name='accuracy')
+            _recall = dict(df.groupby('surf')['is_correct'].mean())
+            _precision = dict(df.groupby('prediction')['is_correct'].mean())
             _mean_acc = df['is_correct'].mean()
 
             pretty_name = format_model_name(net, f_type, ds_type)
             accuracy_by_dir[pretty_name] = _acc_by_dir
             mean_accuracy[pretty_name] = _mean_acc
+            recall_by_surf[pretty_name] = _recall
+            precision_by_surf[pretty_name] = _precision
     surfs = list(surfs)
 
     # Sort keys by accuracy descending
@@ -369,6 +409,28 @@ def main():
 
     accuracy_by_dir = {k: accuracy_by_dir[k] for k in sorted_keys}
     mean_accuracy = {k: mean_accuracy[k] for k in sorted_keys}
+    # Process stats
+    # Recall
+    recall_df = pd.DataFrame(recall_by_surf).T.reset_index(names=['model'])
+    recall_df = pd.melt(
+        recall_df,
+        id_vars=['model'],
+        var_name='surf',
+        value_name='recall',
+    )
+    recall_df['surf'] = recall_df['surf'].apply(str.lower)
+    recall_order = list(recall_df.groupby('surf')['recall'].mean().sort_values(ascending=False).index)
+
+    # Precision
+    precision_df = pd.DataFrame(precision_by_surf).T.reset_index(names=['model'])
+    precision_df = pd.melt(
+        precision_df,
+        id_vars=['model'],
+        var_name='surf',
+        value_name='precision',
+    )
+    precision_df['surf'] = precision_df['surf'].apply(str.lower)
+    precision_order = list(precision_df.groupby('surf')['precision'].mean().sort_values(ascending=False).index)
 
     # Paths
     prefix = '_'.join(sorted(args.nets))
@@ -400,6 +462,40 @@ def main():
             bar_fig,
             path=figure_dir,
             name='bar',
+            raster_out=args.raster_out,
+        )
+
+    # Recall Plots
+    recall_barplot_fig = grouped_stats_barplot(
+        recall_df,
+        recall_order,
+        model_order,
+        colors,
+        'recall'
+    )
+
+    if recall_barplot_fig:
+        write_image(
+            recall_barplot_fig,
+            path=figure_dir,
+            name='recall',
+            raster_out=args.raster_out,
+        )
+
+    # Precision Plots
+    precision_barplot_fig = grouped_stats_barplot(
+        precision_df,
+        precision_order,
+        model_order,
+        colors,
+        'precision'
+    )
+
+    if precision_barplot_fig:
+        write_image(
+            precision_barplot_fig,
+            path=figure_dir,
+            name='precision',
             raster_out=args.raster_out,
         )
 
