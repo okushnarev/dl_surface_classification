@@ -79,6 +79,13 @@ class ProjectPaths:
         return cls._ROOT / 'results' / config_name / subset_name
 
     @classmethod
+    def get_baseline_dfs_dir(cls) -> Path:
+        """
+        Returns: baseline_stats/
+        """
+        return cls._ROOT / 'baseline_stats'
+
+    @classmethod
     def get_figures_dir(cls, config_name: str) -> Path:
         """
         Returns: figures/<config_name>/
