@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import Iterable
 
 import pandas as pd
 from sklearn.metrics import classification_report
@@ -36,7 +37,7 @@ def main():
     print()
 
     main_sheet_name = 'Main'
-    main_df_rows, stats_dfs = extract_stats_from_results(raw_results, main_sheet_name)
+    main_df_rows, stats_dfs = extract_stats_from_results(raw_results, [main_sheet_name])
 
     main_df = pd.DataFrame(main_df_rows)
 
@@ -211,13 +212,13 @@ def parse_baseline(
 
 def extract_stats_from_results(
         raw_results: dict[str, tuple[dict[str, str], pd.DataFrame]],
-        main_sheet_name: str
+        backlink_sheet_names: Iterable[str]
 ):
     """
     Extract accuracy and classification report statistics from raw results
 
     :param raw_results: Dictionary mapping experiment names to (metadata, DataFrame) tuples
-    :param main_sheet_name: Name of the main sheet for hyperlink reference
+    :param backlink_sheet_names: Name of the main sheets for hyperlink reference
     :returns: Tuple of (list of main sheet rows, dictionary of stats DataFrames)
     """
     main_df_rows = []
@@ -238,7 +239,8 @@ def extract_stats_from_results(
         stats = stats.T.reset_index(names=['Surface'])
         stats = stats.rename(columns=str.capitalize)
         stats['Back to main'] = None
-        stats.loc[0, 'Back to main'] = f'=HYPERLINK("#{main_sheet_name}!A1", "Link")'
+        for idx, name in enumerate(backlink_sheet_names):
+            stats.loc[idx, 'Back to main'] = f'=HYPERLINK("#{name}!A1", "{name}")'
         stats_dfs[exp_name] = stats
     return main_df_rows, stats_dfs
 
