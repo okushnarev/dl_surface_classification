@@ -46,7 +46,12 @@ def main():
     df_long = pd.DataFrame(main_df_rows)
     df_wide = convert_to_wide_format(df_long)
 
-    baseline_accuracy_df, baseline_stats_df = parse_baseline(baseline_path, main_df)
+    baseline_accuracy_value, baseline_stats_df = parse_baseline(baseline_path)
+    # Prep baseline accuracy dfs
+    base_acc_long = None
+    if baseline_accuracy_value:
+        base_acc_long = df_long[['Stats', 'Accuracy']].copy()
+        base_acc_long['Accuracy'] = baseline_accuracy_value
 
     with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
         # Base style
@@ -69,7 +74,7 @@ def main():
             df=df_long,
             base_style=style,
             link_cols='Stats',
-            baseline_df=baseline_accuracy_df,
+            baseline_df=base_acc_long,
             index_col='Stats',
         )
 
@@ -196,33 +201,27 @@ def write_header(writer, sheet_name, df, format):
         worksheet.write(0, col_num, value, format)
 
 
-def parse_baseline(
-        baseline_path: Path,
-        main_df: pd.DataFrame
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+def parse_baseline(baseline_path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Parse baseline CSV file and prepare DataFrames for comparison
     Baseline DataFrame should be the output of sklearn's classification report
 
     :param baseline_path: Path to baseline CSV file
-    :param main_df: Main DataFrame to extract accuracy column from
     :returns: Tuple of (baseline_accuracy_df, baseline_stats_df)
     """
     baseline_stats_df = None
-    baseline_accuracy_df = None
+    baseline_accuracy_value = None
     if baseline_path:
-        accuracy_value = 1
+        baseline_accuracy_value = 1
         baseline_df = pd.read_csv(baseline_path, header=0, index_col=0)
         if (_n := 'support') in baseline_df.index:
             baseline_df = baseline_df.drop(index=[_n])
         baseline_df = baseline_df.T
         if (_n := 'accuracy') in baseline_df.index:
-            accuracy_value = baseline_df.loc[_n].max()
+            baseline_accuracy_value = baseline_df.loc[_n].max()
             baseline_df = baseline_df.drop(index=[_n])
         baseline_stats_df = baseline_df.reset_index(names=['Surface'])
-        baseline_accuracy_df = main_df[['Stats', 'Accuracy']].copy()
-        baseline_accuracy_df['Accuracy'] = accuracy_value
-    return baseline_accuracy_df, baseline_stats_df
+    return baseline_accuracy_value, baseline_stats_df
 
 
 def extract_stats_from_results(
