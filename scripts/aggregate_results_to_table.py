@@ -1,7 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import pandas as pd
 from sklearn.metrics import classification_report
