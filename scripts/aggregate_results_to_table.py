@@ -140,7 +140,7 @@ def write_df_with_style(
     write_header(writer, sheet_name, df, header_format)
 
     # Better stats format
-    if baseline_df is not None:
+    if index_col and baseline_df is not None:
         # Find where our stats greater than baseline
         better_stats_idx = find_better_values(df, baseline_df, index_col)
         for idx in better_stats_idx:
@@ -155,7 +155,7 @@ def write_df_with_style(
             worksheet.set_column(_col_idx, _col_idx, len(link_col), link_format)
 
     # Add bottom border before macro/weighted average
-    if (_p := 'macro avg') in (_l := df[index_col].tolist()):
+    if index_col and (_p := 'macro avg') in (_l := df[index_col].tolist()):
         average_stats_row = _l.index(_p)
         for col_num, value in enumerate(df.iloc[average_stats_row]):
             worksheet.write(average_stats_row + 1, col_num, value, top_border_format)
