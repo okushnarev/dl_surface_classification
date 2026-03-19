@@ -164,7 +164,7 @@ def write_df_with_style(
         # Find where our stats greater than baseline
         better_stats_idx = find_better_values(df, baseline_df, index_col)
         for idx in better_stats_idx:
-            worksheet.write_number(idx[0] + 1, idx[1], df.iloc[*idx], better_stats_format)
+            worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], better_stats_format)
 
     # Link format
     if type(link_cols) is not list:
