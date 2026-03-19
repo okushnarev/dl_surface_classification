@@ -67,6 +67,12 @@ def main():
         workbook.formats[0].set_font_name(style['font_name'])
         workbook.formats[0].set_font_size(style['font_size'])
 
+        # Other styles
+        better_stats_style = {
+            **style,
+            'bold': 1,
+        }
+
         # Write long Main df
         write_df_with_style(
             writer=writer,
@@ -74,7 +80,8 @@ def main():
             df=df_long,
             base_style=style,
             link_cols='Stats',
-            baseline_df=base_acc_long,
+            better_stats_idx=find_better_values(df_long, base_acc_long, 'Stats'),
+            better_stats_style=better_stats_style,
             index_col='Stats',
         )
 
@@ -94,7 +101,8 @@ def main():
                 df=_df,
                 base_style=style,
                 link_cols='Back to main',
-                baseline_df=baseline_stats_df,
+                better_stats_idx=find_better_values(_df, baseline_stats_df, 'Surface'),
+                better_stats_style=better_stats_style,
                 index_col='Surface',
             )
     print(f'Saving results to: {output_path}')
@@ -104,9 +112,10 @@ def write_df_with_style(
         writer: pd.ExcelWriter,
         sheet_name: str,
         df: pd.DataFrame,
-        base_style: dict,
+        base_style: dict[str, Any],
         link_cols: list[str] | str = None,
-        baseline_df: pd.DataFrame = None,
+        better_stats_idx: Iterable[tuple[int, int]] = [],
+        better_stats_style: dict[str, Any] = {},
         index_col: str = None,
 ) -> None:
     """
@@ -117,7 +126,8 @@ def write_df_with_style(
     :param df: DataFrame to write
     :param base_style: Dictionary of base style properties for formatting
     :param link_cols: Column name(s) to format as hyperlinks
-    :param baseline_df: Optional DataFrame with baseline values for comparison
+    :param better_stats_idx: Optional dataframe coordinates to apply better_stats_style
+    :param better_stats_style: Dictionary of better_stats style properties for formatting
     :param index_col: Name of the column to use as index for baseline comparison
     :returns: None
     """
@@ -147,10 +157,7 @@ def write_df_with_style(
         'underline':  1,
     })
 
-    better_stats_format = workbook.add_format({
-        **base_style,
-        'bold': True,
-    })
+    better_stats_format = workbook.add_format(better_stats_style)
 
     # Apply formats
     # Base format
@@ -160,11 +167,8 @@ def write_df_with_style(
     write_header(writer, sheet_name, df, header_format)
 
     # Better stats format
-    if index_col and baseline_df is not None:
-        # Find where our stats greater than baseline
-        better_stats_idx = find_better_values(df, baseline_df, index_col)
-        for idx in better_stats_idx:
-            worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], better_stats_format)
+    for idx in better_stats_idx:
+        worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], better_stats_format)
 
     # Link format
     if type(link_cols) is not list:
