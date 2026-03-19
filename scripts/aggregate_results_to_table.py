@@ -254,14 +254,18 @@ def extract_stats_from_results(
     :param backlink_sheet_names: Name of the main sheets for hyperlink reference
     :returns: Tuple of (list of main sheet rows, dictionary of stats DataFrames)
     """
+    # Find the number of filter types
+    n_filters = len({v[0]['filter_type'] for v in raw_results.values()})
+
     main_df_rows = []
     stats_dfs = {}
     for exp_name, (meta, _df) in raw_results.items():
         _df['is_correct'] = _df['surf'] == _df['prediction']
         accuracy = _df['is_correct'].mean()
+        ds_row = meta['ds_type'] + (f"_{meta['filter_type']}" if n_filters > 1 else '')
         main_df_rows.append({
             'Net':      meta['net'],
-            'Dataset':  meta['ds_type'],
+            'Dataset':  ds_row,
             'Accuracy': accuracy,
             'Stats':    f'=HYPERLINK("#{exp_name}!A1", "Link")'
         })
