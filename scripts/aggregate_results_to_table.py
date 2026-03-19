@@ -37,7 +37,7 @@ def main():
     print()
 
     long_sheet_name = 'Main'
-    wide_sheet_name = 'Main Wide'
+    wide_sheet_name = 'Main_Wide'
     main_df_rows, stats_dfs = extract_stats_from_results(
         raw_results,
         [long_sheet_name, wide_sheet_name]
