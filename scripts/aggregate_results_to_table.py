@@ -307,10 +307,10 @@ def find_better_values(
     return better_stats_idx
 
 
-def convert_to_wide_format(df: pd.DataFrame) -> pd.DataFrame:
+def convert_to_wide_format(df: pd.DataFrame, value_col: str = 'Stats_Acc') -> pd.DataFrame:
     df = df.copy()
     df['Stats_Acc'] = df.apply(lambda row: row['Stats'].replace('Link', f"{row['Accuracy']:.4f}"), axis=1)
-    df = df.pivot(index='Net', columns='Dataset', values='Stats_Acc').reset_index()
+    df = df.pivot(index='Net', columns='Dataset', values=value_col).reset_index()
     return df
 
 
