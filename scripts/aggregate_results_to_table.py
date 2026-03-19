@@ -49,9 +49,13 @@ def main():
     baseline_accuracy_value, baseline_stats_df = parse_baseline(baseline_path)
     # Prep baseline accuracy dfs
     base_acc_long = None
+    base_acc_wide = None
     if baseline_accuracy_value:
         base_acc_long = df_long[['Stats', 'Accuracy']].copy()
         base_acc_long['Accuracy'] = baseline_accuracy_value
+
+        base_acc_wide = df_wide.copy()
+        base_acc_wide.iloc[0:, 1:] = baseline_accuracy_value
 
     with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
         # Base style
@@ -85,6 +89,15 @@ def main():
             index_col='Stats',
         )
 
+        # Find better_stats_idx for wide format
+        numeric_df_wide = convert_to_wide_format(df_long, 'Accuracy')
+        better_stats_idx = find_better_values(numeric_df_wide, base_acc_wide, 'Net')
+        better_stats_style_wide = {
+            **better_stats_style,
+            'font_color': 'blue',
+            'underline':  1,
+        }
+
         # Write wide Main df
         write_df_with_style(
             writer=writer,
@@ -92,6 +105,8 @@ def main():
             df=df_wide,
             base_style=style,
             link_cols=df_wide.columns.tolist()[1:],  # Ignoring 'Net' column (non-numeric)
+            better_stats_idx=better_stats_idx,
+            better_stats_style=better_stats_style_wide,
         )
 
         for sheet_name, _df in stats_dfs.items():
