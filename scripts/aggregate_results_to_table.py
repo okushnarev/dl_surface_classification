@@ -36,10 +36,15 @@ def main():
     raw_results = get_results(nets, args.configs, args.subset)
     print()
 
-    main_sheet_name = 'Main'
-    main_df_rows, stats_dfs = extract_stats_from_results(raw_results, [main_sheet_name])
+    long_sheet_name = 'Main'
+    wide_sheet_name = 'Main Wide'
+    main_df_rows, stats_dfs = extract_stats_from_results(
+        raw_results,
+        [long_sheet_name, wide_sheet_name]
+    )
 
-    main_df = pd.DataFrame(main_df_rows)
+    df_long = pd.DataFrame(main_df_rows)
+    df_wide = convert_to_wide_format(df_long)
 
     baseline_accuracy_df, baseline_stats_df = parse_baseline(baseline_path, main_df)
 
@@ -57,14 +62,24 @@ def main():
         workbook.formats[0].set_font_name(style['font_name'])
         workbook.formats[0].set_font_size(style['font_size'])
 
+        # Write long Main df
         write_df_with_style(
             writer=writer,
-            sheet_name=main_sheet_name,
-            df=main_df,
+            sheet_name=long_sheet_name,
+            df=df_long,
             base_style=style,
             link_cols='Stats',
             baseline_df=baseline_accuracy_df,
             index_col='Stats',
+        )
+
+        # Write wide Main df
+        write_df_with_style(
+            writer=writer,
+            sheet_name=wide_sheet_name,
+            df=df_wide,
+            base_style=style,
+            link_cols=df_wide.columns.tolist()[1:],  # Ignoring 'Net' column (non-numeric)
         )
 
         for sheet_name, _df in stats_dfs.items():
@@ -287,6 +302,13 @@ def find_better_values(
     better_stats_idx = compare_df.stack()[compare_df.stack()].index.tolist()
     better_stats_idx = match_original_indices(df, better_stats_idx, index_col)
     return better_stats_idx
+
+
+def convert_to_wide_format(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df['Stats_Acc'] = df.apply(lambda row: row['Stats'].replace('Link', f"{row['Accuracy']:.4f}"), axis=1)
+    df = df.pivot(index='Net', columns='Dataset', values='Stats_Acc').reset_index()
+    return df
 
 
 if __name__ == '__main__':
