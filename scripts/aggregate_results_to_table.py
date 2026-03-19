@@ -1,7 +1,8 @@
 import argparse
 import sys
+from dataclasses import fields, replace
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Iterable
 
 import pandas as pd
 from sklearn.metrics import classification_report
@@ -12,6 +13,7 @@ sys.path.append(str(project_root))
 
 from src.data.manipulation import align_dfs, get_results, match_original_indices
 from src.utils.paths import ProjectPaths
+from src.utils.excel import SheetStyles, Style
 
 
 def parse_args():
@@ -59,54 +61,59 @@ def main():
 
     with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
         # Base style
-        style = {
-            'font_name':  'Calibri',
-            'font_size':  15,
-            'valign':     'vcenter',
-            'align':      'left',
-            'num_format': '0.0000',
-        }
+        base_style = Style()
+
         # Set font params to entire workbook for proper auto-width computation
         workbook = writer.book
-        workbook.formats[0].set_font_name(style['font_name'])
-        workbook.formats[0].set_font_size(style['font_size'])
+        workbook.formats[0].set_font_name(base_style['font_name'])
+        workbook.formats[0].set_font_size(base_style['font_size'])
 
         # Other styles
-        better_stats_style = {
-            **style,
-            'bold': 1,
-        }
+        header_style = base_style.copy()
+        header_style.set(bottom=1, bold=1)
+
+        better_stats_style = base_style.copy()
+        better_stats_style.set(bold=1)
+
+        link_style = base_style.copy()
+        link_style.set(font_color='blue', underline=1)
+
+        separator_style = base_style.copy()
+        separator_style.set(top=1)
+
+        sheet_style = SheetStyles(
+            base=base_style,
+            header=header_style,
+            link=link_style,
+            better_stats=better_stats_style,
+            separator=separator_style,
+        )
 
         # Write long Main df
         write_df_with_style(
             writer=writer,
             sheet_name=long_sheet_name,
             df=df_long,
-            base_style=style,
+            sheet_style=sheet_style,
             link_cols='Stats',
             better_stats_idx=find_better_values(df_long, base_acc_long, 'Stats'),
-            better_stats_style=better_stats_style,
             index_col='Stats',
         )
 
         # Find better_stats_idx for wide format
         numeric_df_wide = convert_to_wide_format(df_long, 'Accuracy')
         better_stats_idx = find_better_values(numeric_df_wide, base_acc_wide, 'Net')
-        better_stats_style_wide = {
-            **better_stats_style,
-            'font_color': 'blue',
-            'underline':  1,
-        }
+        better_stats_style_wide = better_stats_style + link_style
+        wide_sheet_style = replace(sheet_style, better_stats=better_stats_style_wide)
 
         # Write wide Main df
         write_df_with_style(
             writer=writer,
             sheet_name=wide_sheet_name,
             df=df_wide,
-            base_style=style,
+            sheet_style=wide_sheet_style,
             link_cols=df_wide.columns.tolist()[1:],  # Ignoring 'Net' column (non-numeric)
             better_stats_idx=better_stats_idx,
-            better_stats_style=better_stats_style_wide,
         )
 
         for sheet_name, _df in stats_dfs.items():
@@ -114,10 +121,9 @@ def main():
                 writer=writer,
                 sheet_name=sheet_name,
                 df=_df,
-                base_style=style,
+                sheet_style=sheet_style,
                 link_cols='Back to main',
                 better_stats_idx=find_better_values(_df, baseline_stats_df, 'Surface'),
-                better_stats_style=better_stats_style,
                 index_col='Surface',
             )
     print(f'Saving results to: {output_path}')
@@ -127,10 +133,9 @@ def write_df_with_style(
         writer: pd.ExcelWriter,
         sheet_name: str,
         df: pd.DataFrame,
-        base_style: dict[str, Any],
+        sheet_style: SheetStyles,
         link_cols: list[str] | str = None,
         better_stats_idx: Iterable[tuple[int, int]] = [],
-        better_stats_style: dict[str, Any] = {},
         index_col: str = None,
 ) -> None:
     """
@@ -153,37 +158,20 @@ def write_df_with_style(
     worksheet = writer.sheets[sheet_name]
 
     # Formats
-    standard_data_format = workbook.add_format(base_style)
-
-    top_border_format = workbook.add_format({
-        **base_style,
-        'top': 1,
-    })
-
-    header_format = workbook.add_format({
-        **base_style,
-        'bottom': 1,
-        'bold':   True,
-    })
-
-    link_format = workbook.add_format({
-        **base_style,
-        'font_color': 'blue',
-        'underline':  1,
-    })
-
-    better_stats_format = workbook.add_format(better_stats_style)
+    formats = {}
+    for field in fields(sheet_style):
+        formats[field.name] = workbook.add_format(getattr(sheet_style, field.name).style)
 
     # Apply formats
     # Base format
-    worksheet.set_column(0, len(df.columns) - 1, None, standard_data_format)
+    worksheet.set_column(0, len(df.columns) - 1, None, formats['base'])
 
     # Header format
-    write_header(writer, sheet_name, df, header_format)
+    write_header(writer, sheet_name, df, formats['header'])
 
     # Better stats format
     for idx in better_stats_idx:
-        worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], better_stats_format)
+        worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], formats['better_stats'])
 
     # Link format
     if type(link_cols) is not list:
@@ -191,13 +179,13 @@ def write_df_with_style(
     if link_cols:
         for link_col in link_cols:
             _col_idx = df.columns.get_loc(link_col)
-            worksheet.set_column(_col_idx, _col_idx, len(link_col), link_format)
+            worksheet.set_column(_col_idx, _col_idx, len(link_col), formats['link'])
 
     # Add bottom border before macro/weighted average
     if index_col and (_p := 'macro avg') in (_l := df[index_col].tolist()):
         average_stats_row = _l.index(_p)
         for col_num, value in enumerate(df.iloc[average_stats_row]):
-            worksheet.write(average_stats_row + 1, col_num, value, top_border_format)
+            worksheet.write(average_stats_row + 1, col_num, value, formats['separator'])
 
     # Cell size format
     worksheet.autofit()
