@@ -25,6 +25,10 @@ def get_results(
             exp_cfg_path = ProjectPaths.get_experiment_config_path(net, config_name)
             cache_path = ProjectPaths.get_evaluation_dir(config_name, subset)
 
+            if not exp_cfg_path.exists():
+                print(f'\tNo experiment config file at {exp_cfg_path}')
+                continue
+
             with open(exp_cfg_path, 'r') as f:
                 config = yaml.safe_load(f)
             experiments = config['experiments']
