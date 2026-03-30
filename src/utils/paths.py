@@ -31,9 +31,9 @@ class ProjectPaths:
     @classmethod
     def get_dataset_config_path(cls, dataset_scope: str) -> Path:
         """
-        Returns: configs/datasets/<dataset_scope>/dataset_config.json
+        Returns: configs/datasets/<dataset_scope>.json
         """
-        return cls._ROOT / 'configs' / 'datasets' / dataset_scope / 'dataset_config.json'
+        return cls._ROOT / 'configs' / 'datasets' / f'{dataset_scope}.json'
 
     @classmethod
     def get_params_dir(cls, model_name: str, config_name: str) -> Path:
