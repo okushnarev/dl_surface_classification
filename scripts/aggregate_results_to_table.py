@@ -289,7 +289,7 @@ def prepare_paths(args):
 
     combined_config_name = '_'.join(args.configs)
     baseline_name = f'_baseline_{baseline_path.stem}' if baseline_path else ''
-    ProjectPaths.get_tables_dir(combined_config_name, 'best').mkdir(parents=True, exist_ok=True)
+    ProjectPaths.get_tables_dir(combined_config_name, args.ckpt_type).mkdir(parents=True, exist_ok=True)
     output_name = args.output_name if args.output_name else f'results_{args.subset}{baseline_name}'
     output_path = ProjectPaths.get_tables_dir(combined_config_name, args.ckpt_type) / f'{output_name}.xlsx'
     return baseline_path, output_path
