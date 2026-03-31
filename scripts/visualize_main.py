@@ -21,17 +21,6 @@ from src.utils.paths import ProjectPaths
 from src.visualization.tools import bar_plot
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Visualization for Main Dataset')
-    parser.add_argument('--nets', nargs='+', default=['rnn'], help='Networks to include in plots')
-    parser.add_argument('--config_name', type=str, default='main', help='Experiment YAML filename')
-    parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
-                        help='Data subset to evaluate on')
-    parser.add_argument('--top', type=int, default=-1, help='Top N results to show')
-    parser.add_argument('--raster_out', action='store_true', help='Output raster image along with html')
-    return parser.parse_args()
-
-
 def format_model_name(net, filter_type, ds_type):
     """Formats model metadata into a plot-friendly string (HTML allowed)"""
     return '<br>'.join([
@@ -364,6 +353,18 @@ def write_image(fig, path, name, raster_out: bool = False):
         output_path = path / f'{name}.png'
         fig.write_image(output_path, width=1100, height=600, scale=3)
         print(f'Saved: {output_path}')
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Visualization for Main Dataset')
+    parser.add_argument('--nets', nargs='+', default=['rnn'], help='Networks to include in plots')
+    parser.add_argument('--config_name', type=str, default='main', help='Experiment YAML filename')
+    parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
+                        help='Data subset to evaluate on')
+    parser.add_argument('--top', type=int, default=-1, help='Top N results to show')
+    parser.add_argument('--raster_out', action='store_true', help='Output raster image along with html')
+
+    return parser.parse_args()
 
 
 def main():
