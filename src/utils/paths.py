@@ -71,12 +71,12 @@ class ProjectPaths:
         return cls._ROOT / 'experiments' / config_name / exp_name
 
     @classmethod
-    def get_evaluation_dir(cls, config_name: str, subset_name: str | Path) -> Path:
+    def get_evaluation_dir(cls, config_name: str, ckpt_type: str, subset_name: str | Path) -> Path:
         """
-        Returns: results/<config_name>/<subset_name>/
-        Example: results/main/cv/full/ or results/main/full/
+        Returns: results/<config_name>/<ckpt_type>/<subset_name>/
+        Example: results/main/best/full/ or results/main/last/test
         """
-        return cls._ROOT / 'results' / config_name / subset_name
+        return cls._ROOT / 'results' / config_name / ckpt_type / subset_name
 
     @classmethod
     def get_baseline_dfs_dir(cls) -> Path:

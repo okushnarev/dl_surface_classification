@@ -17,6 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--nets', '-n', nargs='+', default=['rnn'], help='Nets to test')
     parser.add_argument('--ds', default='full', choices=['full', 'test'], help='Dataset to use')
+    parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint to load')
     return parser.parse_args()
 
 
@@ -27,7 +28,7 @@ def main():
     nets = sorted(args.nets, key=len, reverse=True)
 
     # Data path
-    cache_path = ProjectPaths.get_evaluation_dir('main', args.ds).parent
+    cache_path = ProjectPaths.get_evaluation_dir('main', args.ckpt_type, args.ds).parent
     data_prefix = '_'.join(nets)
     results_path = cache_path / 'csv' / data_prefix
     results_path.mkdir(parents=True, exist_ok=True)

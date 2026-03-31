@@ -80,7 +80,7 @@ def main():
     df = pd.read_csv(csv_path)
 
     # Define output directory
-    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.subset)
+    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.ckpt_type, args.subset)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     # Ensure nets are in the same order

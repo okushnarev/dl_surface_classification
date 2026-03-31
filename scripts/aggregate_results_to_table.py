@@ -24,6 +24,7 @@ def parse_args():
                         help='Data subset to evaluate on')
     parser.add_argument('--baseline_df', type=str, default=None, help='Name of classification report df')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
+    parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint to load')
     return parser.parse_args()
 
 
@@ -35,7 +36,7 @@ def main():
 
     # Process data
     print('Loading results')
-    raw_results = get_results(nets, args.configs, args.subset)
+    raw_results = get_results(nets, args.configs, args.ckpt_type, args.subset)
     print()
 
     long_sheet_name = 'Main'

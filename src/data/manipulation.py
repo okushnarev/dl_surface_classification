@@ -9,11 +9,13 @@ from src.utils.paths import ProjectPaths
 def get_results(
         nets: list[str],
         configs: list[str],
+        ckpt_type: str,
         subset: str
 ) -> dict[str, pd.DataFrame]:
     """
     Load results for specified networks, configurations, and subset
 
+    :param ckpt_type:
     :param nets: List of network names
     :param configs: List of experiment configuration names
     :param subset: Data subset to evaluate ('test', 'train', or 'full')
@@ -23,7 +25,7 @@ def get_results(
     for net in nets:
         for config_name in configs:
             exp_cfg_path = ProjectPaths.get_experiment_config_path(net, config_name)
-            cache_path = ProjectPaths.get_evaluation_dir(config_name, subset)
+            cache_path = ProjectPaths.get_evaluation_dir(config_name, ckpt_type, subset)
 
             if not exp_cfg_path.exists():
                 print(f'\tNo experiment config file at {exp_cfg_path}')

@@ -363,7 +363,7 @@ def parse_args():
                         help='Data subset to evaluate on')
     parser.add_argument('--top', type=int, default=-1, help='Top N results to show')
     parser.add_argument('--raster_out', action='store_true', help='Output raster image along with html')
-
+    parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint to load')
     return parser.parse_args()
 
 
@@ -386,7 +386,7 @@ def main():
     exp_meta = get_experiment_metadata(args.nets, args.config_name)
 
     # Load results
-    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.subset)
+    results_dir = ProjectPaths.get_evaluation_dir(args.config_name, args.ckpt_type, args.subset)
 
     # Aggregate data
     accuracy_by_dir = {}
