@@ -94,12 +94,12 @@ class ProjectPaths:
         return cls._ROOT / 'figures' / config_name
 
     @classmethod
-    def get_tables_dir(cls, config_name: str) -> Path:
+    def get_tables_dir(cls, config_name: str, ckpt_path: str) -> Path:
         """
-        Returns: tables/<config_name>/
-        Example: tables/main/
+        Returns: tables/<config_name>/<ckpt_path>
+        Example: tables/main/best
         """
-        return cls._ROOT / 'tables' / config_name
+        return cls._ROOT / 'tables' / config_name / ckpt_path
 
 if __name__ == '__main__':
     print(ProjectPaths.get_root())
