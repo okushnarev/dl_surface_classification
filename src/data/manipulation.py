@@ -11,7 +11,7 @@ def get_results(
         configs: list[str],
         ckpt_type: str,
         subset: str
-) -> dict[str, pd.DataFrame]:
+) -> dict[str, tuple[dict[str, str], pd.DataFrame]]:
     """
     Load results for specified networks, configurations, and subset
 
