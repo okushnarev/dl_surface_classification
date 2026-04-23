@@ -22,7 +22,7 @@ def parse_args():
 
     # Runner args
     parser.add_argument('--nn_name', type=str, help='Name of the model (folder in configs/experiments)')
-    parser.add_argument('--config_name', type=str, default='main', help='Name of the YAML config file (without .yaml)')
+    parser.add_argument('--config_name', type=str, default='belyaev_kushnarev', help='Name of the YAML config file (without .yaml)')
     parser.add_argument('--n_jobs', type=int, default=1, help='Number of parallel experiments to run')
 
     # Trainer args from engine/trainer
@@ -33,7 +33,7 @@ def parse_args():
     if not any(action.dest == 'nn_name' for action in parser._actions):
         parser.add_argument('--nn_name', type=str, required=True)
     if not any(action.dest == 'dataset' for action in parser._actions):
-        parser.add_argument('--dataset', type=str, default='main')
+        parser.add_argument('--dataset', type=str, default='belyaev_kushnarev')
 
     return parser.parse_args()
 

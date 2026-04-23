@@ -264,7 +264,7 @@ def trajectory_comparison_barplot(
         top_n: int = -1) -> Optional[Figure]:
     """
     Generates comparison bar chart for Square vs Circle trajectories.
-    Reads from results/main/square/ and results/main/circle/.
+    Reads from results/belyaev_kushnarev/square/ and results/belyaev_kushnarev/circle/.
     """
     print('Creating bar plot for trajectory comparison: square and circle')
 
@@ -275,7 +275,7 @@ def trajectory_comparison_barplot(
         pretty_name = format_model_name(net, f_type, ds_type)
 
         for traj in trajectory_types:
-            # Locate result file: results/main/circle/<exp_name>.csv
+            # Locate result file: results/belyaev_kushnarev/circle/<exp_name>.csv
             csv_path = cache_dir.parent / traj / f'{exp_name}.csv'
 
             if csv_path.exists():
@@ -358,7 +358,7 @@ def write_image(fig, path, name, raster_out: bool = False):
 def parse_args():
     parser = argparse.ArgumentParser(description='Visualization for Main Dataset')
     parser.add_argument('--nets', nargs='+', default=['rnn'], help='Networks to include in plots')
-    parser.add_argument('--config_name', type=str, default='main', help='Experiment YAML filename')
+    parser.add_argument('--config_name', type=str, default='belyaev_kushnarev', help='Experiment YAML filename')
     parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
                         help='Data subset to evaluate on')
     parser.add_argument('--top', type=int, default=-1, help='Top N results to show')
@@ -369,7 +369,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    dataset = 'main'  # This script is specific to Main
+    dataset = 'belyaev_kushnarev'  # This script is specific to Main
 
     # Load baseline df
     mem_df = load_memory_baseline(dataset)

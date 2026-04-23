@@ -28,7 +28,7 @@ def main():
     nets = sorted(args.nets, key=len, reverse=True)
 
     # Data path
-    cache_path = ProjectPaths.get_evaluation_dir('main', args.ckpt_type, args.ds).parent
+    cache_path = ProjectPaths.get_evaluation_dir('belyaev_kushnarev', args.ckpt_type, args.ds).parent
     data_prefix = '_'.join(nets)
     results_path = cache_path / 'csv' / data_prefix
     results_path.mkdir(parents=True, exist_ok=True)
@@ -41,7 +41,7 @@ def main():
         'circle': {},
     }
     for net in nets:
-        exp_cfg_path = ProjectPaths.get_experiment_config_path(net, 'main')
+        exp_cfg_path = ProjectPaths.get_experiment_config_path(net, 'belyaev_kushnarev')
         with open(exp_cfg_path, 'r') as f:
             config = yaml.safe_load(f)
 

@@ -24,7 +24,7 @@ from src.engine.evaluator import ModelWrapper, run_inference
 def parse_args():
     parser = argparse.ArgumentParser(description='Evaluation Runner')
 
-    parser.add_argument('--dataset', type=str, default='main', help='Dataset scope (e.g., main, boreal)')
+    parser.add_argument('--dataset', type=str, default='belyaev_kushnarev', help='Dataset scope (e.g., belyaev_kushnarev, boreal)')
     parser.add_argument('--ds_path', type=str, default=None, help='Path to evaluation dataset')
     parser.add_argument('--subset', type=str, default='full', choices=['test', 'val', 'train', 'full'],
                         help='Data subset to evaluate on')
@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument('--cache_only_nets', nargs='+', default=[],
                         help='List of networks to use cache straightforward without validation '
                              '(helpful for nets that require different accelerator than yours, e.g. mamba runs on GPU only)')
-    parser.add_argument('--config_name', type=str, default='main', help='Name of the experiment YAML file')
+    parser.add_argument('--config_name', type=str, default='belyaev_kushnarev', help='Name of the experiment YAML file')
 
     parser.add_argument('--ckpt_type', default='best', choices=['best', 'last'], help='Checkpoint to load')
     parser.add_argument('--batch_size', type=int, default=4096)

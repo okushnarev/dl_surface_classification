@@ -16,8 +16,8 @@ from src.utils.vars import CHUNK_COL
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='main')
-    parser.add_argument('--full_ds_name', type=str, default='main')
+    parser.add_argument('--dataset', type=str, default='belyaev_kushnarev')
+    parser.add_argument('--full_ds_name', type=str, default='belyaev_kushnarev')
     parser.add_argument('--chunk_size', type=int, default=300)
     parser.add_argument('--proxy_size', type=float, default=0.4,
                         help='Part of the train set that will be used as proxy dataset')

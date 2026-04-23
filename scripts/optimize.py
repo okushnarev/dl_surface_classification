@@ -21,7 +21,7 @@ def parse_args():
 
     # Runner args
     parser.add_argument('--nn_name', type=str, help='Name of the model (folder in configs/experiments)')
-    parser.add_argument('--config_name', type=str, default='main', help='YAML config filename')
+    parser.add_argument('--config_name', type=str, default='belyaev_kushnarev', help='YAML config filename')
 
     # Optimizer args from engine/optimizer
     # Adds --n_trials, --epochs, --filter, etc.
@@ -31,7 +31,7 @@ def parse_args():
     if not any(action.dest == 'nn_name' for action in parser._actions):
         parser.add_argument('--nn_name', type=str, required=True)
     if not any(action.dest == 'dataset' for action in parser._actions):
-        parser.add_argument('--dataset', type=str, default='main')
+        parser.add_argument('--dataset', type=str, default='belyaev_kushnarev')
 
     return parser.parse_args()
 

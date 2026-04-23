@@ -17,7 +17,7 @@ class ProjectPaths:
     def get_processed_data_dir(cls, dataset_scope: str) -> Path:
         """
         Returns: datasets/processed/<dataset_scope>/
-        Example: datasets/processed/main/
+        Example: datasets/processed/belyaev_kushnarev/
         """
         return cls._ROOT / 'datasets' / 'processed' / dataset_scope
 
@@ -39,7 +39,7 @@ class ProjectPaths:
     def get_params_dir(cls, model_name: str, config_name: str) -> Path:
         """
         Returns: configs/model_params/<model_name>/<config_name>/
-        Example: configs/model_params/rnn/main/
+        Example: configs/model_params/rnn/belyaev_kushnarev/
         """
         return cls._ROOT / 'configs' / 'model_params' / model_name / config_name
 
@@ -58,7 +58,7 @@ class ProjectPaths:
     def get_experiment_config_path(cls, model_name: str, config_name: str) -> Path:
         """
         Returns: configs/experiments/<model_name>/<config_name>.yaml
-        Example: configs/experiments/rnn/main.yaml
+        Example: configs/experiments/rnn/belyaev_kushnarev.yaml
         """
         return cls._ROOT / 'configs' / 'experiments' / model_name / f'{config_name}.yaml'
 
@@ -66,7 +66,7 @@ class ProjectPaths:
     def get_run_dir(cls, config_name: str, exp_name: str) -> Path:
         """
         Returns: experiments/<config_name>/<exp_name>/
-        Example: experiments/main/rnn_no_filter_type_3_main/
+        Example: experiments/belyaev_kushnarev/rnn_no_filter_type_3_main/
         """
         return cls._ROOT / 'experiments' / config_name / exp_name
 
@@ -74,7 +74,7 @@ class ProjectPaths:
     def get_evaluation_dir(cls, config_name: str, ckpt_type: str, subset_name: str | Path) -> Path:
         """
         Returns: results/<config_name>/<ckpt_type>/<subset_name>/
-        Example: results/main/best/full/ or results/main/last/test
+        Example: results/belyaev_kushnarev/best/full/ or results/belyaev_kushnarev/last/test
         """
         return cls._ROOT / 'results' / config_name / ckpt_type / subset_name
 
@@ -89,7 +89,7 @@ class ProjectPaths:
     def get_figures_dir(cls, config_name: str, ckpt_path: str) -> Path:
         """
         Returns: figures/<config_name>/
-        Example: figures/main/
+        Example: figures/belyaev_kushnarev/
         """
         return cls._ROOT / 'figures' / config_name / ckpt_path
 
@@ -97,7 +97,7 @@ class ProjectPaths:
     def get_tables_dir(cls, config_name: str, ckpt_path: str) -> Path:
         """
         Returns: tables/<config_name>/<ckpt_path>
-        Example: tables/main/best
+        Example: tables/belyaev_kushnarev/best
         """
         return cls._ROOT / 'tables' / config_name / ckpt_path
 
