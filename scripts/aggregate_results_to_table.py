@@ -175,9 +175,9 @@ def write_df_with_style(
         worksheet.write(idx[0] + 1, idx[1], df.iloc[*idx], formats['better_stats'])
 
     # Link format
-    if type(link_cols) is not list:
-        link_cols = [link_cols]
     if link_cols:
+        if type(link_cols) is not list:
+            link_cols = [link_cols]
         for link_col in link_cols:
             _col_idx = df.columns.get_loc(link_col)
             worksheet.set_column(_col_idx, _col_idx, len(link_col), formats['link'])
