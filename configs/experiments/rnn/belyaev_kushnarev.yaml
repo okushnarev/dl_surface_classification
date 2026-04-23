@@ -1,0 +1,50 @@
+defaults:
+  dataset: belyaev_kushnarev
+  common:
+    use_cuda: True
+    seq_len: 30
+  train:
+    epochs: 150
+    num_workers: 2
+    batch_size: 32768
+  optimization:
+    n_trials: 80
+    epochs: 20
+    batch_size: 4096
+
+experiments:
+  - name: rnn_kalman_set_1
+    skip: False
+    common:
+      filter: kalman
+      feature_set: set_1
+
+  - name: rnn_kalman_set_2
+    skip: False
+    common:
+      filter: kalman
+      feature_set: set_2
+
+  - name: rnn_kalman_set_3
+    skip: False
+    common:
+      filter: kalman
+      feature_set: set_3
+
+  - name: rnn_no_filter_set_1
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_1
+
+  - name: rnn_no_filter_set_2
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_2
+
+  - name: rnn_no_filter_set_3
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_3

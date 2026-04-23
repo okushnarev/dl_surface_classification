@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "group_cols": [
+      "surf",
+      "run_idx"
+    ],
+    "info_cols": [
+      "surf",
+      "run_idx"
+    ],
+    "target_col": "surf",
+    "class_colors": {
+      "asphalt": "#2d2d2d",
+      "flooring": "#c8a2c8",
+      "ice": "#89dee2",
+      "sandy_loam": "#d6c68b",
+      "snow": "#f0f8ff"
+    }
+  },
+  "features": {
+    "no_filter": {
+      "set_4": [
+        "velL",
+        "velR",
+        "wx",
+        "wy",
+        "wz",
+        "ax",
+        "ay",
+        "az"
+      ],
+      "set_5": [
+        "curL",
+        "curR",
+        "velL",
+        "velR",
+        "wx",
+        "wy",
+        "wz",
+        "ax",
+        "ay",
+        "az"
+      ],
+      "set_6": [
+        "curL",
+        "curR",
+        "velL",
+        "velR",
+        "Ke1",
+        "wx",
+        "wy",
+        "wz",
+        "ax",
+        "ay",
+        "az"
+      ]
+    }
+  }
+}

@@ -1,0 +1,32 @@
+defaults:
+  dataset: boreal_imu
+  common:
+    use_cuda: True
+    seq_len: 70
+  train:
+    epochs: 150
+    num_workers: 2
+    batch_size: 32768
+  optimization:
+    n_trials: 80
+    epochs: 20
+    batch_size: 4096
+
+experiments:
+  - name: mamba_no_filter_set_4
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_4
+
+  - name: mamba_no_filter_set_5
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_5
+
+  - name: mamba_no_filter_set_6
+    skip: False
+    common:
+      filter: no_filter
+      feature_set: set_6

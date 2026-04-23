@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "group_cols": [
+      "surf",
+      "run_idx"
+    ],
+    "info_cols": [
+      "surf",
+      "run_idx"
+    ],
+    "target_col": "surf",
+    "class_colors": {
+      "long_carpet": "#957595",
+      "artificial_grass": "#4fc54c",
+      "laminate_flooring": "#d2b48c",
+      "short_carpet": "#b0c4de",
+      "linoleum": "#c8a2c8",
+      "ceramic_tiles": "#ced4da",
+      "pvc_foamboard": "#ebebeb",
+      "osb": "#c2a26c",
+      "foam_underlayment": "#555555",
+      "eva_foam_tiles": "#607d8b"
+    }
+  },
+  "features": {
+    "no_filter": {
+      "set_1": [
+        "wheel_angular_velocity.1",
+        "wheel_angular_velocity.2",
+        "wheel_angular_velocity.3",
+        "wheel_angular_velocity.4",
+        "wheel_load.1",
+        "wheel_load.2",
+        "wheel_load.3",
+        "wheel_load.4"
+      ],
+      "set_2": [
+        "wheel_angular_velocity.1",
+        "wheel_angular_velocity.2",
+        "wheel_angular_velocity.3",
+        "wheel_angular_velocity.4",
+        "wheel_load.1",
+        "wheel_load.2",
+        "wheel_load.3",
+        "wheel_load.4",
+        "estimated_power.1",
+        "estimated_power.2",
+        "estimated_power.3",
+        "estimated_power.4"
+      ],
+      "set_3": [
+        "robot_omega",
+        "estimated_power.1",
+        "estimated_power.2",
+        "estimated_power.3",
+        "estimated_power.4"
+      ],
+      "set_4": [
+        "wheel_angular_velocity.1",
+        "wheel_angular_velocity.2",
+        "wheel_angular_velocity.3",
+        "wheel_angular_velocity.4",
+        "linear_acceleration.x",
+        "linear_acceleration.y",
+        "linear_acceleration.z",
+        "angular_velocity.x",
+        "angular_velocity.y",
+        "angular_velocity.z"
+      ],
+      "set_5": [
+        "wheel_angular_velocity.1",
+        "wheel_angular_velocity.2",
+        "wheel_angular_velocity.3",
+        "wheel_angular_velocity.4",
+        "wheel_load.1",
+        "wheel_load.2",
+        "wheel_load.3",
+        "wheel_load.4",
+        "linear_acceleration.x",
+        "linear_acceleration.y",
+        "linear_acceleration.z",
+        "angular_velocity.x",
+        "angular_velocity.y",
+        "angular_velocity.z"
+      ],
+      "set_6": [
+        "wheel_angular_velocity.1",
+        "wheel_angular_velocity.2",
+        "wheel_angular_velocity.3",
+        "wheel_angular_velocity.4",
+        "wheel_load.1",
+        "wheel_load.2",
+        "wheel_load.3",
+        "wheel_load.4",
+        "estimated_power.1",
+        "estimated_power.2",
+        "estimated_power.3",
+        "estimated_power.4",
+        "linear_acceleration.x",
+        "linear_acceleration.y",
+        "linear_acceleration.z",
+        "angular_velocity.x",
+        "angular_velocity.y",
+        "angular_velocity.z"
+      ]
+    }
+  }
+}

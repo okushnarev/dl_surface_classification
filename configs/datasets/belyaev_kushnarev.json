@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "group_cols": [
+      "exp_idx"
+    ],
+    "info_cols": [
+      "surf",
+      "movedir",
+      "speedamp"
+    ],
+    "target_col": "surf",
+    "class_colors": {
+      "gray": "#b6b6b6",
+      "green": "#4fc54c",
+      "table": "#9f6a4d",
+      "brown": "#ad3024"
+    }
+  },
+  "features": {
+    "no_filter": {
+      "set_1": [
+        "m1cur",
+        "m2cur",
+        "m3cur",
+        "m1vel",
+        "m2vel",
+        "m3vel"
+      ],
+      "set_2": [
+        "m1cur",
+        "m2cur",
+        "m3cur",
+        "m1vel",
+        "m2vel",
+        "m3vel",
+        "Ke1"
+      ],
+      "set_3": [
+        "movedir",
+        "Ke1"
+      ],
+      "set_4_extra": [
+        "movedir",
+        "m1pow",
+        "m2pow",
+        "m3pow"
+      ]
+    },
+    "kalman": {
+      "set_1": [
+        "m1cur_corr",
+        "m2cur_corr",
+        "m3cur_corr",
+        "m1vel_corr",
+        "m2vel_corr",
+        "m3vel_corr"
+      ],
+      "set_2": [
+        "m1cur_corr",
+        "m2cur_corr",
+        "m3cur_corr",
+        "m1vel_corr",
+        "m2vel_corr",
+        "m3vel_corr",
+        "Ke1_corr"
+      ],
+      "set_3": [
+        "movedir",
+        "Ke1_corr"
+      ],
+      "set_4_extra": [
+        "movedir",
+        "m1pow_corr",
+        "m2pow_corr",
+        "m3pow_corr"
+      ]
+    }
+  }
+}
