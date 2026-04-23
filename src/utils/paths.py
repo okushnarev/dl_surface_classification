@@ -86,12 +86,12 @@ class ProjectPaths:
         return cls._ROOT / 'baseline_stats'
 
     @classmethod
-    def get_figures_dir(cls, config_name: str) -> Path:
+    def get_figures_dir(cls, config_name: str, ckpt_path: str) -> Path:
         """
         Returns: figures/<config_name>/
         Example: figures/main/
         """
-        return cls._ROOT / 'figures' / config_name
+        return cls._ROOT / 'figures' / config_name / ckpt_path
 
     @classmethod
     def get_tables_dir(cls, config_name: str, ckpt_path: str) -> Path:
@@ -100,6 +100,7 @@ class ProjectPaths:
         Example: tables/main/best
         """
         return cls._ROOT / 'tables' / config_name / ckpt_path
+
 
 if __name__ == '__main__':
     print(ProjectPaths.get_root())

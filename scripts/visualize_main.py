@@ -447,7 +447,7 @@ def main():
 
     # Paths
     prefix = '_'.join(sorted(args.nets))
-    figure_dir = ProjectPaths.get_figures_dir(args.config_name) / prefix
+    figure_dir = ProjectPaths.get_figures_dir(args.config_name, args.ckpt_type) / prefix
     figure_dir.mkdir(parents=True, exist_ok=True)
 
     # Radial plots
