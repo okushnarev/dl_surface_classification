@@ -36,7 +36,7 @@ def add_optimizer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--num_workers', type=int, default=2)
     group.add_argument('--seed', type=int, default=69)
     group.add_argument('--filter', type=str, default='no_filter')
-    group.add_argument('--ds_type', type=str, default='type_1')
+    group.add_argument('--feature_set', type=str, default='type_1')
     group.add_argument('--use_cuda', action='store_true')
 
     return parent_parser
@@ -174,7 +174,7 @@ def run_optimization(args):
     # Extract configuration details
     group_cols = dataset_config['metadata']['group_cols'] + [CHUNK_COL]
     target_col = dataset_config['metadata']['target_col']
-    feature_cols = dataset_config['features'][args.filter][args.ds_type]
+    feature_cols = dataset_config['features'][args.filter][args.feature_set]
 
     # Locate and load the proxy data
     data_dir = ProjectPaths.get_processed_data_dir(args.dataset)
@@ -270,7 +270,7 @@ def run_optimization(args):
         save_path = Path(args.output_file)
     else:
         # Auto-generate path based on conventions if no explicit output provided
-        name = args.exp_name if args.exp_name else f'{args.filter}_{args.ds_type}'
+        name = args.exp_name if args.exp_name else f'{args.filter}_{args.feature_set}'
         save_path = ProjectPaths.get_params_path(args.nn_name, args.config_name, name)
 
     # Ensure the directory exists

@@ -45,7 +45,7 @@ def get_results(
                 model_names.add(model_name)
 
                 filter_type = exp['common']['filter']
-                ds_type = exp['common']['ds_type']
+                feature_set = exp['common']['feature_set']
 
                 # Check for usual cache
                 cache_info_path = cache_path / f'{model_name}.csv'
@@ -53,7 +53,7 @@ def get_results(
                     metadata = {
                         'net':         net,
                         'filter_type': filter_type,
-                        'ds_type':     ds_type,
+                        'feature_set':     feature_set,
                     }
                     results[model_name] = (metadata, pd.read_csv(cache_info_path))
                 else:

@@ -111,13 +111,13 @@ def main():
             exp_args |= exp.get('common', {})
 
             filter_type = exp_args.get('filter', 'no_filter')
-            ds_type = exp_args.get('ds_type', 'type_1')
+            feature_set = exp_args.get('feature_set', 'type_1')
 
             # Identify features
             try:
-                feature_cols = features_map[filter_type][ds_type]
+                feature_cols = features_map[filter_type][feature_set]
             except KeyError:
-                print(f'Error: Could not find features for {filter_type}/{ds_type} in dataset config.')
+                print(f'Error: Could not find features for {filter_type}/{feature_set} in dataset config.')
                 continue
 
             # Define output path
@@ -205,7 +205,7 @@ def main():
                 features=feature_cols,
                 net_type=net_name,
                 filter_type=filter_type,
-                dataset=ds_type
+                dataset=feature_set
             )
 
             # Run inference

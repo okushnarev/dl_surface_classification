@@ -26,7 +26,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
     group.add_argument('--filter', type=str, default='no_filter', help='Filter used to create dataset')
     group.add_argument('--batch_size', type=int, default=32768)
-    group.add_argument('--ds_type', type=str, default='type_1', help='Dataset type')
+    group.add_argument('--feature_set', type=str, default='type_1', help='Feature set')
     group.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     group.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     group.add_argument('--param_file', type=str, default=None, help='Path to JSON config')
@@ -66,7 +66,7 @@ def train_model(args):
     # Params
     group_cols = datasets_cfg['metadata']['group_cols'] + [CHUNK_COL]
     target_col = datasets_cfg['metadata']['target_col']
-    feature_cols = datasets_cfg['features'][args.filter][args.ds_type]
+    feature_cols = datasets_cfg['features'][args.filter][args.feature_set]
 
     # Encode and scale
     label_encoder = LabelEncoder()

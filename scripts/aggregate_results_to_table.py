@@ -251,7 +251,7 @@ def extract_stats_from_results(
     for exp_name, (meta, _df) in raw_results.items():
         _df['is_correct'] = _df['surf'] == _df['prediction']
         accuracy = _df['is_correct'].mean()
-        ds_row = meta['ds_type'] + (f"_{meta['filter_type']}" if n_filters > 1 else '')
+        ds_row = meta['feature_set'] + (f"_{meta['filter_type']}" if n_filters > 1 else '')
         main_df_rows.append({
             'Net':      meta['net'],
             'Dataset':  ds_row,
