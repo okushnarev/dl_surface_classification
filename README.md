@@ -82,7 +82,7 @@ Typical workflow is:
 #### 2. Write dataset config into `configs/datasets/` as `.json` file
 
 Use existing configs for reference. State `group_cols`, `info_cols`, and `target_col` in `metadata` section, and feature
-sets in `features` section
+sets in `features` section. `features` expect separation by filter type. If your features are not separated by filter type simply  add `no_filter` subsection.
 
 #### 3. Run [scripts/prepare_raw_data.py](scripts/prepare_raw_data.py)
 
