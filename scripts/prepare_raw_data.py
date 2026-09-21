@@ -46,6 +46,12 @@ def main():
                                     # kwargs
                                     train_size=0.8,
                                     random_state=args.seed)
+    df_train, df_val = chunk_split(df_train,
+                                    group_cols=group_cols,
+                                    target_col=target_col,
+                                    # kwargs
+                                    train_size=0.875,
+                                    random_state=args.seed)
     if args.proxy_size < 1:
         df_proxy, _ = chunk_split(df_train,
                               group_cols=group_cols,
@@ -61,6 +67,7 @@ def main():
 
     df_train.to_csv(output_path / 'train.csv', index=False)
     df_test.to_csv(output_path / 'test.csv', index=False)
+    df_test.to_csv(output_path / 'val.csv', index=False)
     df_proxy.to_csv(output_path / 'proxy.csv', index=False)
 
 
