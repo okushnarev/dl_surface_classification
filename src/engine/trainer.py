@@ -155,7 +155,7 @@ def train_model(args):
 
         # Training Loop
         start_epoch = 0
-        best_acc = 0
+        best_val_loss = float('inf')
 
         if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
             print('Resuming training from checkpoint')
@@ -206,12 +206,12 @@ def train_model(args):
                 print(f'  Val loss: {val_loss:.6f}')
                 print(f'  Accuracy on the val set: {100 * val_acc:.2f} %')
 
-                if val_acc > best_acc:
-                    best_acc = val_acc
-                    print('The best accuracy found')
-                    save_checkpoint(model, optimizer, epoch, epoch_loss, best_acc, ckpt_path / 'best.pt')
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    print('The best vall loss found')
+                    save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'best.pt')
 
             if epoch % args.save_every == 0 or epoch == args.epochs - 1:
-                save_checkpoint(model, optimizer, epoch, epoch_loss, best_acc, ckpt_path / 'last.pt')
+                save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'last.pt')
 
     train_loop()
