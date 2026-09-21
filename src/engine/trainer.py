@@ -33,6 +33,8 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--param_file', type=str, default=None, help='Path to JSON config')
     group.add_argument('--val_every', type=int, default=20, help='Val model every N epochs')
     group.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
+    group.add_argument('--early_stop_patience', type=int, default=10,
+                       help='Early stop after no loss improvement after N val epochs')
     group.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
     group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
     group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
@@ -156,6 +158,7 @@ def train_model(args):
         # Training Loop
         start_epoch = 0
         best_val_loss = float('inf')
+        early_stop_counter = 0
         val_acc = 0
 
         if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
@@ -209,8 +212,16 @@ def train_model(args):
 
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
+                    early_stop_counter = 0
                     print('The best vall loss found')
                     save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'best.pt')
+                else:
+                    early_stop_counter += 1
+
+                if early_stop_counter >= args.early_stop_patience:
+                    print("  Early stopping triggered")
+                    save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'last.pt')
+                    break
 
             if epoch % args.save_every == 0 or epoch == args.epochs - 1:
                 save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'last.pt')
