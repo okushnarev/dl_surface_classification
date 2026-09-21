@@ -215,13 +215,13 @@ def train_model(args):
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     early_stop_counter = 0
-                    print('The best vall loss found')
+                    print('  The best vall loss found')
                     save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'best.pt')
                 else:
                     early_stop_counter += 1
 
                 if early_stop_counter >= args.early_stop_patience:
-                    print("  Early stopping triggered")
+                    print('  Early stopping triggered')
                     save_checkpoint(model, optimizer, epoch, epoch_loss, val_acc, ckpt_path / 'last.pt')
                     break
 
