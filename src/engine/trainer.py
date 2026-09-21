@@ -143,6 +143,8 @@ def train_model(args):
         val_loader = DataLoader(
             val_dataset,
             batch_size=batch_size,
+            num_workers=1,
+            worker_init_fn=seed_worker,
             shuffle=False
         )
 
