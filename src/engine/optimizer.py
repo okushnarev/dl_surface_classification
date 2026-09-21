@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from src.data.processing import chunk_split, create_sequences
 from src.models.factory import get_model_components
 from src.utils.paths import ProjectPaths
-from src.utils.seed import seed_everything
+from src.utils.seed import seed_everything, seed_worker
 from src.utils.vars import CHUNK_COL
 
 
@@ -64,9 +64,21 @@ def _execute_trial_loop(trial: Trial,
         # Create a DataLoader
         pin_memory = False if device == torch.device('cpu') else True
         _num_workers = 0 if device == torch.device('cpu') else num_workers
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory,
-                                  num_workers=_num_workers)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=_num_workers)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            pin_memory=pin_memory,
+            num_workers=_num_workers,
+            worker_init_fn=seed_worker,
+        )
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=_num_workers,
+            worker_init_fn=seed_worker,
+        )
         optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5, min_lr=1e-5)
         criterion = nn.CrossEntropyLoss()

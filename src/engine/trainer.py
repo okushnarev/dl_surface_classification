@@ -17,7 +17,7 @@ from src.data.processing import create_sequences
 from src.models.factory import get_model_components
 from src.utils.io import load_checkpoint, save_checkpoint
 from src.utils.paths import ProjectPaths
-from src.utils.seed import seed_everything
+from src.utils.seed import seed_everything, seed_worker
 from src.utils.vars import CHUNK_COL
 
 
@@ -135,6 +135,7 @@ def train_model(args):
             shuffle=True,
             pin_memory=False if device == torch.device('cpu') else True,
             num_workers=args.num_workers,
+            worker_init_fn=seed_worker,
         )
 
         test_loader = DataLoader(
