@@ -31,7 +31,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--use_cuda', action='store_true', help='Wheter to use CUDA')
     group.add_argument('--seq_len', type=int, default=10, help='Sequence length for BPTT')
     group.add_argument('--param_file', type=str, default=None, help='Path to JSON config')
-    group.add_argument('--test_every', type=int, default=20, help='Test model every N epochs')
+    group.add_argument('--val_every', type=int, default=20, help='Val model every N epochs')
     group.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
     group.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
     group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
@@ -61,7 +61,7 @@ def train_model(args):
     # Load Data
     print(f'Loading data from {data_dir}')
     df_train = pd.read_csv(data_dir / 'train.csv')
-    df_test = pd.read_csv(data_dir / 'test.csv')
+    df_val = pd.read_csv(data_dir / 'val.csv')
 
     with open(ProjectPaths.get_dataset_config_path(args.dataset), 'r') as f:
         datasets_cfg = json.load(f)
@@ -74,11 +74,11 @@ def train_model(args):
     # Encode and scale
     label_encoder = LabelEncoder()
     df_train[target_col] = label_encoder.fit_transform(df_train[target_col])
-    df_test[target_col] = label_encoder.transform(df_test[target_col])
+    df_val[target_col] = label_encoder.transform(df_val[target_col])
 
     scaler = StandardScaler()
     df_train[feature_cols] = scaler.fit_transform(df_train[feature_cols])
-    df_test[feature_cols] = scaler.transform(df_test[feature_cols])
+    df_val[feature_cols] = scaler.transform(df_val[feature_cols])
 
     # Save scaler and label encoder
     joblib.dump(scaler, ckpt_path / 'scaler.joblib')
@@ -86,17 +86,17 @@ def train_model(args):
 
     # Create sequences
     X_train, y_train = create_sequences(df_train, group_cols, feature_cols, target_col, args.seq_len)
-    X_test, y_test = create_sequences(df_test, group_cols, feature_cols, target_col, args.seq_len)
-    print(f'Created {len(X_train)} training sequences and {len(X_test)} test sequences.')
+    X_val, y_val = create_sequences(df_val, group_cols, feature_cols, target_col, args.seq_len)
+    print(f'Created {len(X_train)} training sequences and {len(X_val)} val sequences.')
 
     # Create datasets
     X_train = torch.tensor(X_train, dtype=torch.bfloat16)
     y_train = torch.tensor(y_train, dtype=torch.long)
     train_dataset = TensorDataset(X_train, y_train)
 
-    X_test = torch.tensor(X_test, dtype=torch.bfloat16)
-    y_test = torch.tensor(y_test, dtype=torch.long)
-    test_dataset = TensorDataset(X_test, y_test)
+    X_val = torch.tensor(X_val, dtype=torch.bfloat16)
+    y_val = torch.tensor(y_val, dtype=torch.long)
+    val_dataset = TensorDataset(X_val, y_val)
 
     # Initialize model
     components = get_model_components(args.nn_name)
@@ -138,8 +138,8 @@ def train_model(args):
             worker_init_fn=seed_worker,
         )
 
-        test_loader = DataLoader(
-            test_dataset,
+        val_loader = DataLoader(
+            val_dataset,
             batch_size=batch_size,
             shuffle=False
         )
@@ -186,23 +186,23 @@ def train_model(args):
             current_lr = optimizer.param_groups[0]['lr']
             print(f'Epoch [{epoch + 1}/{args.epochs}] Loss: {epoch_loss:.6f} LR: {current_lr:.2e}')
 
-            # Test
-            if epoch % args.test_every == 0 or epoch == args.epochs - 1:
+            # Val
+            if epoch % args.val_every == 0 or epoch == args.epochs - 1:
                 model.eval()
                 correct, total = 0, 0
                 with torch.no_grad():
-                    for sequences, labels in test_loader:
+                    for sequences, labels in val_loader:
                         sequences, labels = sequences.to(device), labels.to(device)
                         outputs = model(sequences)
                         predicted = torch.argmax(outputs, 1)
                         total += labels.size(0)
                         correct += (predicted == labels).sum().item()
 
-                test_acc = correct / total
-                print(f'Accuracy on the test set: {100 * test_acc:.2f} %')
+                val_acc = correct / total
+                print(f'Accuracy on the val set: {100 * val_acc:.2f} %')
 
-                if test_acc > best_acc:
-                    best_acc = test_acc
+                if val_acc > best_acc:
+                    best_acc = val_acc
                     print('The best accuracy found')
                     save_checkpoint(model, optimizer, epoch, epoch_loss, best_acc, ckpt_path / 'best.pt')
 
