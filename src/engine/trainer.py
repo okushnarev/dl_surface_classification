@@ -33,7 +33,7 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--param_file', type=str, default=None, help='Path to JSON config')
     group.add_argument('--val_every', type=int, default=5, help='Val model every N epochs')
     group.add_argument('--save_every', type=int, default=10, help='Save model every N epochs')
-    group.add_argument('--early_stop_patience', type=int, default=5,
+    group.add_argument('--early_stop_patience', type=int, default=7,
                        help='Early stop after no loss improvement after N val epochs')
     group.add_argument('--exp_name', type=str, default=None, help='Experiment name for a run')
     group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
