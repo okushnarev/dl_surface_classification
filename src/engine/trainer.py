@@ -181,7 +181,6 @@ def train_model(args):
                 optimizer.step()
 
             epoch_loss /= len(train_loader)
-            scheduler.step(epoch_loss)
 
             current_lr = optimizer.param_groups[0]['lr']
             print(f'Epoch [{epoch + 1}/{args.epochs}] Loss: {epoch_loss:.6f} LR: {current_lr:.2e}')
@@ -189,17 +188,23 @@ def train_model(args):
             # Val
             if epoch % args.val_every == 0 or epoch == args.epochs - 1:
                 model.eval()
+                val_loss = 0
                 correct, total = 0, 0
                 with torch.no_grad():
                     for sequences, labels in val_loader:
                         sequences, labels = sequences.to(device), labels.to(device)
                         outputs = model(sequences)
                         predicted = torch.argmax(outputs, 1)
+                        loss = criterion(outputs, labels)
+                        val_loss += loss.item()
                         total += labels.size(0)
                         correct += (predicted == labels).sum().item()
 
                 val_acc = correct / total
-                print(f'Accuracy on the val set: {100 * val_acc:.2f} %')
+                val_loss /= len(val_loader)
+                scheduler.step(val_loss)
+                print(f'  Val loss: {val_loss:.6f}')
+                print(f'  Accuracy on the val set: {100 * val_acc:.2f} %')
 
                 if val_acc > best_acc:
                     best_acc = val_acc
