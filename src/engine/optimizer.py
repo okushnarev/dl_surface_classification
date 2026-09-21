@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from src.data.processing import chunk_split, create_sequences
 from src.models.factory import get_model_components
 from src.utils.paths import ProjectPaths
+from src.utils.seed import seed_everything
 from src.utils.vars import CHUNK_COL
 
 
@@ -162,6 +163,7 @@ def generic_objective(trial, net_name, train_dataset, val_dataset, input_dim, nu
 
 
 def run_optimization(args):
+    seed_everything(args.seed)
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
     print(f'Starting Optimization for {args.nn_name} on {args.dataset}')

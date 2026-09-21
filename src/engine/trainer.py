@@ -17,6 +17,7 @@ from src.data.processing import create_sequences
 from src.models.factory import get_model_components
 from src.utils.io import load_checkpoint, save_checkpoint
 from src.utils.paths import ProjectPaths
+from src.utils.seed import seed_everything
 from src.utils.vars import CHUNK_COL
 
 
@@ -36,11 +37,13 @@ def add_trainer_args(parent_parser: argparse.ArgumentParser):
     group.add_argument('--num_workers', type=int, default=1, help='Number of workers for Dataloader')
     group.add_argument('--restart_behavior', choices=['resume', 'restart'], default='restart',
                        help='Resume loads checkpoint and continue training\n Restart overwrites everything')
+    group.add_argument('--seed', type=int, default=69, help='Seed everything integer')
     return parent_parser
 
 
 def train_model(args):
     # Setup
+    seed_everything(args.seed)
     torch.multiprocessing.set_start_method('spawn', force=True)
     device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
