@@ -156,6 +156,7 @@ def train_model(args):
         # Training Loop
         start_epoch = 0
         best_val_loss = float('inf')
+        val_acc = 0
 
         if args.restart_behavior == 'resume' and (ckpt_path / 'last.pt').exists():
             print('Resuming training from checkpoint')
