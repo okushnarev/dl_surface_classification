@@ -128,8 +128,11 @@ def train_model(args):
         sequence_length=args.seq_len
     )
 
+    model = ModelClass(**cfg['model']).to(device, dtype=torch.bfloat16)
+
     @find_executable_batch_size(starting_batch_size=args.batch_size)
     def train_loop(batch_size):
+        nonlocal model
         # Create dataLoaders
         train_loader = DataLoader(
             train_dataset,
@@ -146,9 +149,9 @@ def train_model(args):
             num_workers=1,
             worker_init_fn=seed_worker,
             shuffle=False
+
         )
 
-        model = ModelClass(**cfg['model']).to(device, dtype=torch.bfloat16)
         optimizer = optim.AdamW(
             model.parameters(),
             lr=cfg['optimizer']['start_lr'],
