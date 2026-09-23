@@ -130,6 +130,13 @@ def train_model(args):
 
     model = ModelClass(**cfg['model']).to(device, dtype=torch.bfloat16)
 
+    # Special check for appropriate batch size for MAMBA
+    if args.nn_name == 'mamba':
+        max_capacity = 2 ** 31
+        in_proj_dim = model.mamba.in_proj.out_features
+        max_batch_size = max_capacity // (args.seq_len * args.batch_size * in_proj_dim)
+        args.batch_size = min(max_batch_size, args.batch_size)
+
     @find_executable_batch_size(starting_batch_size=args.batch_size)
     def train_loop(batch_size):
         nonlocal model
