@@ -170,7 +170,7 @@ def train_model(args):
             print('Resuming training from checkpoint')
             checkpoint = load_checkpoint(model, optimizer, ckpt_path / 'last.pt', device)
             start_epoch = checkpoint['epoch']
-            best_acc = checkpoint.get('best_acc', 0)
+            val_acc = checkpoint.get('best_acc', 0)
 
         print(f'\n--- Starting Training: {args.nn_name.upper()}. Batch size: {batch_size} ---')
 
