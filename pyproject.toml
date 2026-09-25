@@ -3,13 +3,15 @@ name = "dl-surf-cls"
 version = "1.0.0"
 description = "This study uses deep learning to assess how energy-based features (motor currents, power estimates) perform alone versus with inertial data for surface classification in mobile robotics."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "accelerate>=1.12.0",
     "jupyter>=1.1.1",
     "kaleido>=1.2.0",
     "matplotlib>=3.10.6",
     "numpy>=2.3.3",
+    "onnx==1.18.0",
+    "onnxruntime~=1.19.0",
     "optuna>=4.5.0",
     "pandas>=2.3.2",
     "plotly>=6.3.0",
