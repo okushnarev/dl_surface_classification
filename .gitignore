@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Custom files
+.DS_Store
+*.yaml
+*.csv
+*.ipynb
+*.json
+*.pt
+*.joblib
+*.txt
+*.html
+*.png
