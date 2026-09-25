@@ -254,7 +254,7 @@ def extract_stats_from_results(
         ds_row = meta['feature_set'] + (f"_{meta['filter_type']}" if n_filters > 1 else '')
         main_df_rows.append({
             'Net':      meta['net'],
-            'Dataset':  ds_row,
+            'Feature set':  ds_row,
             'Accuracy': accuracy,
             'Stats':    f'=HYPERLINK("#{exp_name}!A1", "Link")'
         })
@@ -318,7 +318,7 @@ def find_better_values(
 def convert_to_wide_format(df: pd.DataFrame, value_col: str = 'Stats_Acc') -> pd.DataFrame:
     df = df.copy()
     df['Stats_Acc'] = df.apply(lambda row: row['Stats'].replace('Link', f"{row['Accuracy']:.4f}"), axis=1)
-    df = df.pivot(index='Net', columns='Dataset', values=value_col).reset_index()
+    df = df.pivot(index='Net', columns='Feature set', values=value_col).reset_index()
     return df
 
 
