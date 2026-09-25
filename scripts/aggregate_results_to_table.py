@@ -117,6 +117,15 @@ def main():
             better_stats_idx=better_stats_idx,
         )
 
+        # Write numeric wide main df
+        write_df_with_style(
+            writer=writer,
+            sheet_name=f'{wide_sheet_name}_raw',
+            df=numeric_df_wide,
+            sheet_style=sheet_style,
+            better_stats_idx=better_stats_idx,
+        )
+
         for sheet_name, _df in stats_dfs.items():
             write_df_with_style(
                 writer=writer,
