@@ -3,7 +3,10 @@ from argparse import ArgumentParser
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
+
 import pandas as pd
+from joblib import Memory
 
 # Add project root to PATH
 project_root = Path(__file__).resolve().parent.parent
@@ -11,7 +14,9 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.data.manipulation import get_results
-from src.utils.excel import extract_stats_from_results,  prepare_paths
+from src.utils.excel import extract_stats_from_results, prepare_paths
+
+memory = Memory(project_root / '.math_cache', verbose=0)
 
 
 def parse_args():
@@ -34,35 +39,42 @@ def main():
 
     # Process data
     print('Loading results')
-    first_raw_results = get_results(nets, args.configs, 'last', args.subset)
-
-    # Seeded results
-    seeded_configs = {cfg: defaultdict(list) for cfg in args.configs}
-    for cfg in args.configs:
-        for net in nets:
-            cfg_paths = list(ProjectPaths.get_experiment_config_path(net, cfg).parent.glob(f'{cfg}_s*'))
-            cfg_names = [p.stem for p in cfg_paths]
-            seeded_configs[cfg][net].extend(cfg_names)
-
-    seeded_configs = {cfg: list(zip(*l.values())) for cfg, l in seeded_configs.items()}
-    seeded_configs = [list(itertools.chain(*item)) for item in zip(*seeded_configs.values())]
-
-    seeded_raw_results = [get_results(nets, cfg, 'best', args.subset) for cfg in seeded_configs]
-    print()
-
-    # Stats
-    long_sheet_name = 'Main'
-    wide_sheet_name = 'Main_Wide'
-    main_df_rows, metrics_dfs = zip(*(
-        extract_stats_from_results(_r, [long_sheet_name, wide_sheet_name])
-        for _r in [first_raw_results] + seeded_raw_results
-    ))
+    main_df_rows, metrics_dfs = extract_multi_seed_stats(nets, args.configs, args.subset)
 
     # Prep main df
     main_df = pd.DataFrame(list(itertools.chain(*main_df_rows)))
     main_df_unique_cols = main_df[['Net', 'Feature set', 'Stats']].drop_duplicates()
     main_df_stats = main_df.groupby(['Net', 'Feature set'])['Accuracy'].agg(['mean', 'std']).reset_index()
     main_df_stats = main_df_stats.merge(main_df_unique_cols, on=['Net', 'Feature set'], how='left')
+
+
+@memory.cache
+def extract_multi_seed_stats(
+        nets: list[str],
+        configs: list[str],
+        subset: str,
+        long_sheet_name: str = 'Main',
+        wide_sheet_name: str = 'Main_Wide'
+) -> tuple[list[dict[str, Any]], list[dict[str, pd.DataFrame]]]:
+    first_raw_results = get_results(nets, configs, 'last', subset)
+    # Seeded results
+    seeded_configs = {cfg: defaultdict(list) for cfg in configs}
+    for cfg in configs:
+        for net in nets:
+            cfg_paths = list(ProjectPaths.get_experiment_config_path(net, cfg).parent.glob(f'{cfg}_s*'))
+            cfg_names = [p.stem for p in cfg_paths]
+            seeded_configs[cfg][net].extend(cfg_names)
+    seeded_configs = {cfg: list(zip(*l.values())) for cfg, l in seeded_configs.items()}
+    seeded_configs = [list(itertools.chain(*item)) for item in zip(*seeded_configs.values())]
+    seeded_raw_results = [get_results(nets, cfg, 'best', subset) for cfg in seeded_configs]
+    print()
+    # Stats
+    main_df_rows, metrics_dfs = zip(*(
+        extract_stats_from_results(_r, [long_sheet_name, wide_sheet_name])
+        for _r in [first_raw_results] + seeded_raw_results
+    ))
+    return main_df_rows, metrics_dfs
+
 
 if __name__ == '__main__':
     main()
