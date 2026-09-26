@@ -14,7 +14,7 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.data.manipulation import get_results
-from src.utils.excel import extract_stats_from_results, prepare_paths
+from src.utils.excel import convert_to_wide_format, extract_stats_from_results, prepare_paths
 
 memory = Memory(project_root / '.math_cache', verbose=0)
 
@@ -44,8 +44,17 @@ def main():
     # Prep main df
     main_df = pd.DataFrame(list(itertools.chain(*main_df_rows)))
     main_df_unique_cols = main_df[['Net', 'Feature set', 'Stats']].drop_duplicates()
-    main_df_stats = main_df.groupby(['Net', 'Feature set'])['Accuracy'].agg(['mean', 'std']).reset_index()
+    main_df_stats = (
+        main_df
+        .groupby(['Net', 'Feature set'])
+        .agg(
+            Accuracy=('Accuracy', 'mean'),
+            STD=('Accuracy', 'std'),
+        )
+        .reset_index()
+    )
     main_df_stats = main_df_stats.merge(main_df_unique_cols, on=['Net', 'Feature set'], how='left')
+    long_main_df_stats = convert_to_wide_format(main_df_stats)
 
 
 @memory.cache
