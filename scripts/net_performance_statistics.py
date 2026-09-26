@@ -67,12 +67,12 @@ def main():
 
     # Prep metrics
     metrics_df_stats = {}
-    for k in metrics_dfs[0].keys():
-        df = pd.concat([d[k] for d in metrics_dfs], ignore_index=True)
+    for key in metrics_dfs[0].keys():
+        df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
         df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(['mean', 'std']).reset_index()
         df.columns = ['_'.join(col).strip('_ ') for col in df.columns.values]
-        df = df.merge(metrics_dfs[0][k][['Surface', 'Back to main']], on='Surface', how='left')
-        metrics_df_stats[k] = df
+        df = df.merge(metrics_dfs[0][key][['Surface', 'Back to main']], on='Surface', how='left')
+        metrics_df_stats[key] = df
 
     baseline_accuracy_value, baseline_stats_df = parse_baseline(baseline_path)
     # Prep baseline accuracy dfs
