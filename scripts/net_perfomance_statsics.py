@@ -14,7 +14,7 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.data.manipulation import get_results
-from src.utils.excel import convert_to_wide_format, extract_stats_from_results, prepare_paths
+from src.utils.excel import convert_to_wide_format, extract_stats_from_results, prepare_paths, parse_baseline
 
 memory = Memory(project_root / '.math_cache', verbose=0)
 
@@ -64,6 +64,17 @@ def main():
         df.columns = ['_'.join(col).strip('_ ') for col in df.columns.values]
         df = df.merge(metrics_dfs[0][k][['Surface', 'Back to main']], on='Surface', how='left')
         metrics_df_stats[k] = df
+
+    baseline_accuracy_value, baseline_stats_df = parse_baseline(baseline_path)
+    # Prep baseline accuracy dfs
+    base_acc_long = None
+    base_acc_wide = None
+    if baseline_accuracy_value:
+        base_acc_long = main_df_stats[['Stats', 'Accuracy']].copy()
+        base_acc_long['Accuracy'] = baseline_accuracy_value
+
+        base_acc_wide = wide_main_df_stats.copy()
+        base_acc_wide.iloc[0:, 1:] = baseline_accuracy_value
 
 
 @memory.cache
