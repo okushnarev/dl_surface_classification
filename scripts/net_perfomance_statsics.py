@@ -56,6 +56,15 @@ def main():
     main_df_stats = main_df_stats.merge(main_df_unique_cols, on=['Net', 'Feature set'], how='left')
     long_main_df_stats = convert_to_wide_format(main_df_stats)
 
+    # Prep metrics
+    metrics_df_stats = {}
+    for k in metrics_dfs[0].keys():
+        df = pd.concat([d[k] for d in metrics_dfs], ignore_index=True)
+        df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(['mean', 'std']).reset_index()
+        df.columns = ['_'.join(col).strip('_ ') for col in df.columns.values]
+        df = df.merge(metrics_dfs[0][k][['Surface', 'Back to main']], on='Surface', how='left')
+        metrics_df_stats[k] = df
+
 
 @memory.cache
 def extract_multi_seed_stats(
