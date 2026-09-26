@@ -14,7 +14,8 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.data.manipulation import get_results
-from src.utils.excel import convert_to_wide_format, extract_stats_from_results, prepare_paths, parse_baseline
+from src.utils.excel import SheetStyles, Style, convert_to_wide_format, extract_stats_from_results, find_better_values, \
+    parse_baseline, prepare_paths, write_df_with_style
 
 memory = Memory(project_root / '.math_cache', verbose=0)
 
@@ -38,8 +39,16 @@ def main():
     baseline_path, output_path = prepare_paths(args)
 
     # Process data
+    long_sheet_name = 'Main'
+    wide_sheet_name = 'Main_Wide'
     print('Loading results')
-    main_df_rows, metrics_dfs = extract_multi_seed_stats(nets, args.configs, args.subset)
+    main_df_rows, metrics_dfs = extract_multi_seed_stats(
+        nets,
+        args.configs,
+        args.subset,
+        long_sheet_name,
+        wide_sheet_name,
+    )
 
     # Prep main df
     main_df = pd.DataFrame(list(itertools.chain(*main_df_rows)))
@@ -75,6 +84,48 @@ def main():
 
         base_acc_wide = wide_main_df_stats.copy()
         base_acc_wide.iloc[0:, 1:] = baseline_accuracy_value
+
+    with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+        # Base style
+        base_style = Style()
+
+        # Set font params to entire workbook for proper auto-width computation
+        workbook = writer.book
+        workbook.formats[0].set_font_name(base_style['font_name'])
+        workbook.formats[0].set_font_size(base_style['font_size'])
+
+        # Other styles
+        header_style = base_style.copy()
+        header_style.set(bottom=1, bold=1)
+
+        better_stats_style = base_style.copy()
+        better_stats_style.set(bold=1)
+
+        link_style = base_style.copy()
+        link_style.set(font_color='blue', underline=1)
+
+        separator_style = base_style.copy()
+        separator_style.set(top=1)
+
+        sheet_style = SheetStyles(
+            base=base_style,
+            header=header_style,
+            link=link_style,
+            better_stats=better_stats_style,
+            separator=separator_style,
+        )
+
+        # Write long Main df
+        write_df_with_style(
+            writer=writer,
+            sheet_name=long_sheet_name,
+            df=main_df_stats,
+            sheet_style=sheet_style,
+            link_cols='Stats',
+            better_stats_idx=find_better_values(main_df_stats, base_acc_long, 'Stats'),
+            index_col='Stats',
+        )
+    print(f'Saving results to: {output_path}')
 
 
 @memory.cache
