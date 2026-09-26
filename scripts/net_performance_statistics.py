@@ -59,7 +59,7 @@ def main():
         .groupby(['Net', 'Feature set'])
         .agg(
             Accuracy=('Accuracy', 'mean'),
-            STD=('Accuracy', 'std'),
+            Accuracy_std=('Accuracy', 'std'),
         )
         .reset_index()
     )
@@ -70,8 +70,18 @@ def main():
     metrics_df_stats = {}
     for key in metrics_dfs[0].keys():
         df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
-        df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(['mean', 'std']).reset_index()
-        df.columns = ['_'.join(col).strip('_ ') for col in df.columns]
+        df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(
+            **{
+                'Precision': ('Precision', 'mean'),
+                'Precision_std': ('Precision', 'std'),
+
+                'Recall':    ('Recall', 'mean'),
+                'Recall_std':    ('Recall', 'std'),
+
+                'F1-score':  ('F1-score', 'mean'),
+                'F1-score_std':  ('F1-score', 'std'),
+            }
+        ).reset_index()
         df = df.merge(metrics_dfs[0][key][['Surface', 'Back to main']], on='Surface', how='left')
         metrics_df_stats[key] = df
 
@@ -151,6 +161,17 @@ def main():
             sheet_style=sheet_style,
             better_stats_idx=better_stats_idx,
         )
+
+        for sheet_name, _df in metrics_df_stats.items():
+            write_df_with_style(
+                writer=writer,
+                sheet_name=sheet_name,
+                df=_df,
+                sheet_style=sheet_style,
+                link_cols='Back to main',
+                better_stats_idx=find_better_values(_df, baseline_stats_df, 'Surface'),
+                index_col='Surface',
+            )
     print(f'Saving results to: {output_path}')
 
 
