@@ -2,6 +2,7 @@ import itertools
 from argparse import ArgumentParser
 import sys
 from collections import defaultdict
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -124,6 +125,31 @@ def main():
             link_cols='Stats',
             better_stats_idx=find_better_values(main_df_stats, base_acc_long, 'Stats'),
             index_col='Stats',
+        )
+
+        # Find better_stats_idx for wide format
+        numeric_df_wide = convert_to_wide_format(main_df_stats, 'Accuracy')
+        better_stats_idx = find_better_values(numeric_df_wide, base_acc_wide, 'Net')
+        better_stats_style_wide = better_stats_style + link_style
+        wide_sheet_style = replace(sheet_style, better_stats=better_stats_style_wide)
+
+        # Write wide Main df
+        write_df_with_style(
+            writer=writer,
+            sheet_name=wide_sheet_name,
+            df=wide_main_df_stats,
+            sheet_style=wide_sheet_style,
+            link_cols=wide_main_df_stats.columns.tolist()[1:],  # Ignoring 'Net' column (non-numeric)
+            better_stats_idx=better_stats_idx,
+        )
+
+        # Write numeric wide main df
+        write_df_with_style(
+            writer=writer,
+            sheet_name=f'{wide_sheet_name}_raw',
+            df=numeric_df_wide,
+            sheet_style=sheet_style,
+            better_stats_idx=better_stats_idx,
         )
     print(f'Saving results to: {output_path}')
 
