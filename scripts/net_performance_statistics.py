@@ -72,13 +72,13 @@ def main():
         df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
         df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(
             **{
-                'Precision': ('Precision', 'mean'),
+                'Precision':     ('Precision', 'mean'),
                 'Precision_std': ('Precision', 'std'),
 
-                'Recall':    ('Recall', 'mean'),
+                'Recall':        ('Recall', 'mean'),
                 'Recall_std':    ('Recall', 'std'),
 
-                'F1-score':  ('F1-score', 'mean'),
+                'F1-score':      ('F1-score', 'mean'),
                 'F1-score_std':  ('F1-score', 'std'),
             }
         ).reset_index()
