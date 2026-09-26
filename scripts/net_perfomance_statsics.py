@@ -54,7 +54,7 @@ def main():
         .reset_index()
     )
     main_df_stats = main_df_stats.merge(main_df_unique_cols, on=['Net', 'Feature set'], how='left')
-    long_main_df_stats = convert_to_wide_format(main_df_stats)
+    wide_main_df_stats = convert_to_wide_format(main_df_stats)
 
     # Prep metrics
     metrics_df_stats = {}
