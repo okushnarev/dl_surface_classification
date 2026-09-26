@@ -1,9 +1,13 @@
+import itertools
 from argparse import ArgumentParser
 import sys
+from collections import defaultdict
 from pathlib import Path
 # Add project root to PATH
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
+
+from src.utils.paths import ProjectPaths
 from src.data.manipulation import get_results
 from src.utils.excel import prepare_paths
 
@@ -29,3 +33,17 @@ def main():
     # Process data
     print('Loading results')
     first_raw_results = get_results(nets, args.configs, 'last', args.subset)
+
+    # Seeded results
+    seeded_configs = {cfg: defaultdict(list) for cfg in args.configs}
+    for cfg in args.configs:
+        for net in nets:
+            cfg_paths = list(ProjectPaths.get_experiment_config_path(net, cfg).parent.glob(f'{cfg}_s*'))
+            cfg_names = [p.stem for p in cfg_paths]
+            seeded_configs[cfg][net].extend(cfg_names)
+
+    seeded_configs = {cfg: list(zip(*l.values())) for cfg, l in seeded_configs.items()}
+    seeded_configs = [list(itertools.chain(*item)) for item in zip(*seeded_configs.values())]
+
+    seeded_raw_results = [get_results(nets, cfg, 'best', args.subset) for cfg in seeded_configs]
+    print()
