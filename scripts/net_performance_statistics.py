@@ -29,6 +29,11 @@ def parse_args():
                         help='Data subset to evaluate on')
     parser.add_argument('--baseline_df', type=str, default=None, help='Name of classification report df')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
+    parser.add_argument('--column-format', type=str, choices=['separate', 'combined'], default='separate',
+                        help='Whether to store mean and std data in separate columns or combined with ±. '
+                             'Converted to string. Number of decimals is set with `--decimals`')
+    parser.add_argument('--decimals', type=int, default=2,
+                        help='Number of decimals to show in ± annotation. Works when `--column-format` is set to `combined`')
     return parser.parse_args()
 
 
@@ -123,13 +128,18 @@ def main():
         )
 
         # Write long Main df
+        better_stats_idx = find_better_values(main_df_stats, base_acc_long, 'Stats')
+        mdf_long_export = main_df_stats
+        if args.column_format == 'combined':
+            mdf_long_export = combine_columns(mdf_long_export, 'Accuracy', 'Accuracy_std', args.decimals)
+
         write_df_with_style(
             writer=writer,
             sheet_name=long_sheet_name,
-            df=main_df_stats,
+            df=mdf_long_export,
             sheet_style=sheet_style,
             link_cols='Stats',
-            better_stats_idx=find_better_values(main_df_stats, base_acc_long, 'Stats'),
+            better_stats_idx=better_stats_idx,
             index_col='Stats',
         )
 
@@ -140,16 +150,23 @@ def main():
         wide_sheet_style = replace(sheet_style, better_stats=better_stats_style_wide)
 
         # Write wide Main df
+        mdf_wide_export = wide_main_df_stats
+        if args.column_format == 'combined':
+            mdf_wide_export = convert_to_wide_format(mdf_long_export)
+
         write_df_with_style(
             writer=writer,
             sheet_name=wide_sheet_name,
-            df=wide_main_df_stats,
+            df=mdf_wide_export,
             sheet_style=wide_sheet_style,
             link_cols=wide_main_df_stats.columns.tolist()[1:],  # Ignoring 'Net' column (non-numeric)
             better_stats_idx=better_stats_idx,
         )
 
         # Write numeric wide main df
+        if args.column_format == 'combined':
+            numeric_df_wide = convert_to_wide_format(mdf_long_export, 'Accuracy')
+
         write_df_with_style(
             writer=writer,
             sheet_name=f'{wide_sheet_name}_raw',
@@ -159,16 +176,42 @@ def main():
         )
 
         for sheet_name, _df in metrics_df_stats.items():
+            better_stats_idx = find_better_values(_df, baseline_stats_df, 'Surface')
+            if args.column_format == 'combined':
+                better_stats_idx = find_better_values(
+                    _df.drop([f'{c}_std' for c in metric_cols], axis=1),
+                    baseline_stats_df,
+                    'Surface'
+                )
+                for col in metric_cols:
+                    _df = combine_columns(_df, col, f'{col}_std', args.decimals)
+
             write_df_with_style(
                 writer=writer,
                 sheet_name=sheet_name,
                 df=_df,
                 sheet_style=sheet_style,
                 link_cols='Back to main',
-                better_stats_idx=find_better_values(_df, baseline_stats_df, 'Surface'),
+                better_stats_idx=better_stats_idx,
                 index_col='Surface',
             )
     print(f'Saving results to: {output_path}')
+
+
+def combine_columns(
+        df: pd.DataFrame,
+        col_mean: str,
+        col_std: str,
+        decimals: int
+) -> pd.DataFrame:
+    df = df.copy()
+    df[col_mean] = (
+            df[col_mean].map(f'{{:.{decimals}f}}'.format)
+            + ' ± '
+            + df[col_std].map(f'{{:.{decimals}f}}'.format)
+    )
+    df = df.drop(col_std, axis=1)
+    return df
 
 
 @memory.cache
