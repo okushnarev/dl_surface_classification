@@ -67,19 +67,15 @@ def main():
     wide_main_df_stats = convert_to_wide_format(main_df_stats)
 
     # Prep metrics
+    metric_cols = ('Precision', 'Recall', 'F1-score')
     metrics_df_stats = {}
     for key in metrics_dfs[0].keys():
         df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
-        df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(
+        df = df.groupby('Surface')[metric_cols].agg(
             **{
-                'Precision':     ('Precision', 'mean'),
-                'Precision_std': ('Precision', 'std'),
-
-                'Recall':        ('Recall', 'mean'),
-                'Recall_std':    ('Recall', 'std'),
-
-                'F1-score':      ('F1-score', 'mean'),
-                'F1-score_std':  ('F1-score', 'std'),
+                k: v
+                for col in metric_cols
+                for k, v in {col: (col, 'mean'), f'{col}_std': (col, 'std')}.items()
             }
         ).reset_index()
         df = df.merge(metrics_dfs[0][key][['Surface', 'Back to main']], on='Surface', how='left')
