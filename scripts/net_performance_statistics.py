@@ -67,7 +67,7 @@ def main():
     wide_main_df_stats = convert_to_wide_format(main_df_stats)
 
     # Prep metrics
-    metric_cols = ('Precision', 'Recall', 'F1-score')
+    metric_cols = ['Precision', 'Recall', 'F1-score']
     metrics_df_stats = {}
     for key in metrics_dfs[0].keys():
         df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
