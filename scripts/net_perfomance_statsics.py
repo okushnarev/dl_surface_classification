@@ -63,3 +63,6 @@ def main():
     main_df_unique_cols = main_df[['Net', 'Feature set', 'Stats']].drop_duplicates()
     main_df_stats = main_df.groupby(['Net', 'Feature set'])['Accuracy'].agg(['mean', 'std']).reset_index()
     main_df_stats = main_df_stats.merge(main_df_unique_cols, on=['Net', 'Feature set'], how='left')
+
+if __name__ == '__main__':
+    main()
