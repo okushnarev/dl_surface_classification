@@ -70,7 +70,7 @@ def main():
     for key in metrics_dfs[0].keys():
         df = pd.concat([d[key] for d in metrics_dfs], ignore_index=True)
         df = df.groupby('Surface')[['Precision', 'Recall', 'F1-score']].agg(['mean', 'std']).reset_index()
-        df.columns = ['_'.join(col).strip('_ ') for col in df.columns.values]
+        df.columns = ['_'.join(col).strip('_ ') for col in df.columns]
         df = df.merge(metrics_dfs[0][key][['Surface', 'Back to main']], on='Surface', how='left')
         metrics_df_stats[key] = df
 
