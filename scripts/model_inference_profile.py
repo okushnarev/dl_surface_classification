@@ -8,6 +8,7 @@ import torch
 import yaml
 
 from src.models.factory import get_model_components
+from src.performance.onnx_export import export_model_to_onnx
 
 # Add project root to PATH
 project_root = Path(__file__).resolve().parent.parent
@@ -125,6 +126,10 @@ def main():
                 except Exception as e:
                     print(f'Exception occured during weights loading. Skipping.\n{e}')
                     continue
+
+                onnx_path = run_dir / 'model.onnx'
+                if not onnx_path.exists():
+                    export_model_to_onnx(model, onnx_path, (1, seq_len, num_classes))
 
 
 if __name__ == '__main__':
