@@ -28,11 +28,6 @@ def parse_args():
     parser.add_argument('--ckpt-type', type=str, choices=['last', 'best'],
                         default='last', help='Model\'s checkpoint type to load')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
-    parser.add_argument('--column-format', type=str, choices=['separate', 'combined'], default='separate',
-                        help='Whether to store mean and std data in separate columns or combined with ±. '
-                             'Converted to string. Number of decimals is set with `--decimals`')
-    parser.add_argument('--decimals', type=int, default=2,
-                        help='Number of decimals to show in ± annotation. Works when `--column-format` is set to `combined`')
     return parser.parse_args()
 
 
