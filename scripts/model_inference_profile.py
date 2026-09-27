@@ -1,4 +1,18 @@
+import json
+import sys
 from argparse import ArgumentParser
+from pathlib import Path
+
+import joblib
+import torch
+import yaml
+
+from src.models.factory import get_model_components
+
+# Add project root to PATH
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
+from src.utils.paths import ProjectPaths
 
 
 def parse_args():
@@ -15,7 +29,102 @@ def parse_args():
 
 
 def main():
-    pass
+    args = parse_args()
+    nets = sorted(args.nets, key=len, reverse=True)
+    device = 'cpu'
+
+    results = {}
+    for net in nets:
+        for config_name in args.configs:
+            exp_cfg_path = ProjectPaths.get_experiment_config_path(net, config_name)
+            if not exp_cfg_path.exists():
+                print(f'Skipping {net}: Config not found at {exp_cfg_path}')
+                continue
+
+            with open(exp_cfg_path, 'r') as f:
+                yaml_content = yaml.safe_load(f)
+
+            defaults = yaml_content.get('defaults', {})
+            experiments = yaml_content.get('experiments', [])
+
+            # Load data config
+            dataset = defaults['dataset']
+            ds_config_path = ProjectPaths.get_dataset_config_path(dataset)
+            with open(ds_config_path, 'r') as f:
+                ds_config = json.load(f)
+            features_map = ds_config['features']
+
+            # Loop over experiments
+            for exp in experiments:
+                exp_name = exp.get('name')
+                print(f'\nProcessing {exp_name}')
+
+                # Prepare experiment args
+                exp_args = defaults.get('common', {}).copy()
+                exp_args |= exp.get('common', {})
+
+                filter_type = exp_args.get('filter', 'no_filter')
+                feature_set = exp_args.get('feature_set', 'type_1')
+
+                # Identify features
+                try:
+                    feature_cols = features_map[filter_type][feature_set]
+                except KeyError:
+                    print(f'Error: Could not find features for {filter_type}/{feature_set} in dataset config.')
+                    continue
+
+                # Checkpoint, scaler, label encoder
+                run_dir = ProjectPaths.get_run_dir(args.config_name, exp_name)
+
+                ckpt_path = run_dir / f'{args.ckpt_type}.pt'
+                scaler_path = run_dir / 'scaler.joblib'
+                label_encoder_path = run_dir / 'label_encoder.joblib'
+
+                if not ckpt_path.exists():
+                    print(f'\tCheckpoint not found: {ckpt_path}. Skipping')
+                    continue
+
+                # Load label encoder
+                if not label_encoder_path.exists():
+                    print(f'\tLabelEncoder not found: {label_encoder_path}. Implying output shape from dataset config')
+                    num_classes = len(ds_config['metadata']['class_colors'])
+                else:
+                    label_encoder = joblib.load(label_encoder_path)
+                    num_classes = len(label_encoder.classes_)
+
+                # Resolve Params File
+                train_args = defaults.get('train', {}).copy()
+                train_args |= exp.get('train', {})
+
+                param_file = train_args.get('param_file')
+                if param_file:
+                    cfg_path = Path(param_file)
+                else:
+                    cfg_path = ProjectPaths.get_params_path(net, args.config_name, exp_name)
+
+                # Prepare config
+                seq_len: int = exp_args.get('seq_len', 10)
+
+                # Create model
+                components = get_model_components(net)
+                ModelClass = components['class']
+                prep_cfg = components['prep_config']
+
+                model_cfg = prep_cfg(
+                    cfg_path,
+                    input_dim=len(feature_cols),
+                    num_classes=num_classes,
+                    sequence_length=seq_len
+                )
+                model = ModelClass(**model_cfg['model']).to(device, dtype=torch.bfloat16)
+
+                # Load Weights
+                checkpoint = torch.load(ckpt_path, map_location=device)
+                try:
+                    model.load_state_dict(checkpoint['model_state_dict'])
+                except Exception as e:
+                    print(f'Exception occured during weights loading. Skipping.\n{e}')
+                    continue
 
 
 if __name__ == '__main__':
