@@ -6,7 +6,6 @@ from pathlib import Path
 import codegreen
 import joblib
 import numpy as np
-import onnx_tool
 import pandas as pd
 import torch
 import yaml
@@ -19,6 +18,7 @@ from src.utils.paths import ProjectPaths
 from src.models.factory import get_model_components
 from src.performance.inference_time import profile_inference_time, setup_ort_session
 from src.performance.onnx_export import export_model_to_onnx
+from src.performance.static_stats import profile_mac_and_params_count
 
 
 def parse_args():
@@ -144,11 +144,7 @@ def main():
 
                 # MACs profiling
                 print(f'  Starting MAC and Params count')
-                model = onnx_tool.Model(onnx_path)
-                model.graph.shape_infer()
-                model.graph.profile()
-                total_macs = model.graph.macs[0]
-                total_params = model.graph.params
+                total_macs, total_params = profile_mac_and_params_count(onnx_path)
 
                 # Energy profiling
                 n_energy_runs = 10_000
