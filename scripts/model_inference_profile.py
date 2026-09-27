@@ -65,7 +65,7 @@ def main():
             # Loop over experiments
             for exp in experiments:
                 exp_name = exp.get('name')
-                print(f'\nProcessing {exp_name}')
+                print(f'\nProcessing {config_name} – {exp_name}')
 
                 # Prepare experiment args
                 exp_args = defaults.get('common', {}).copy()
