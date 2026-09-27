@@ -3,6 +3,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
+import codegreen
 import joblib
 import numpy as np
 import onnx_tool
@@ -147,13 +148,26 @@ def main():
                 total_macs = model.graph.macs[0]
                 total_params = model.graph.params
 
+                # Energy profiling
+                n_energy_runs = 10_000
+                task_name = 'forward_pass'
+                with codegreen.Session('onnx_inference', save_to_file=False) as s:
+                    with s.task(task_name):
+                        profile_inference_time(ort_session, n_energy_runs, 0)
+
+                energy_per_run = None
+                for task in s.tasks:
+                    if task.name == task_name:
+                        energy_per_run = task.energy_j / n_energy_runs
+
                 results.append({
                     'net':                 net,
                     'config':              config_name,
                     'inference_time_mean': elapsed_time.mean(),
                     'inference_time_std':  elapsed_time.std(),
-                    'macs': total_macs,
-                    'params': total_params,
+                    'macs':                total_macs,
+                    'params':              total_params,
+                    'energy_per_run':      energy_per_run,
                 })
     print(results)
 
