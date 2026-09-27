@@ -128,6 +128,7 @@ def main():
                     sequence_length=seq_len
                 )
                 model = ModelClass(**model_cfg['model']).to(device)
+                model.eval()
 
                 # Load Weights
                 checkpoint = torch.load(ckpt_path, map_location=device)
