@@ -138,11 +138,13 @@ def main():
                 export_model_to_onnx(model, onnx_path, (1, seq_len, len(feature_cols)))
 
                 # Inference time profiling
-                ort_session = setup_ort_session(onnx_path)
                 n_runs = 100
+                print(f'  Starting inference time profiling with {n_runs} runs')
+                ort_session = setup_ort_session(onnx_path)
                 elapsed_time = np.array(profile_inference_time(ort_session, n_runs))
 
                 # MACs profiling
+                print(f'  Starting MAC and Params count')
                 model = onnx_tool.Model(onnx_path)
                 model.graph.shape_infer()
                 model.graph.profile()
@@ -151,6 +153,7 @@ def main():
 
                 # Energy profiling
                 n_energy_runs = 10_000
+                print(f'  Starting energy profiling with {n_energy_runs} runs')
                 task_name = 'forward_pass'
                 with codegreen.Session('onnx_inference', save_to_file=False) as s:
                     with s.task(task_name):
