@@ -7,6 +7,7 @@ import codegreen
 import joblib
 import numpy as np
 import onnx_tool
+import pandas as pd
 import torch
 import yaml
 
@@ -161,15 +162,19 @@ def main():
                         energy_per_run = task.energy_j / n_energy_runs
 
                 results.append({
-                    'net':                 net,
                     'config':              config_name,
+                    'exp_name':            exp_name,
+                    'net':                 net,
+                    'filter_type':         filter_type,
+                    'feature_set':         feature_set,
                     'inference_time_mean': elapsed_time.mean(),
                     'inference_time_std':  elapsed_time.std(),
                     'macs':                total_macs,
                     'params':              total_params,
                     'energy_per_run':      energy_per_run,
                 })
-    print(results)
+    df_res = pd.DataFrame(results)
+    print(df_res)
 
 
 if __name__ == '__main__':
