@@ -164,6 +164,7 @@ def main():
                 })
     df_res = pd.DataFrame(results)
     df_res.to_csv(output_path, index=False)
+    print(f'Profiling results are save to {output_path}')
 
 
 if __name__ == '__main__':
