@@ -4,16 +4,18 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import joblib
+import numpy as np
 import torch
 import yaml
-
-from src.models.factory import get_model_components
-from src.performance.onnx_export import export_model_to_onnx
 
 # Add project root to PATH
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
+
 from src.utils.paths import ProjectPaths
+from src.models.factory import get_model_components
+from src.performance.inference_time import profile_inference_time, setup_ort_session
+from src.performance.onnx_export import export_model_to_onnx
 
 
 def parse_args():
@@ -34,7 +36,7 @@ def main():
     nets = sorted(args.nets, key=len, reverse=True)
     device = 'cpu'
 
-    results = {}
+    results = []
     for net in nets:
         for config_name in args.configs:
             exp_cfg_path = ProjectPaths.get_experiment_config_path(net, config_name)
@@ -130,6 +132,17 @@ def main():
                 onnx_path = run_dir / 'model.onnx'
                 if not onnx_path.exists():
                     export_model_to_onnx(model, onnx_path, (1, seq_len, num_classes))
+
+                # Inference time profiling
+                ort_session = setup_ort_session(onnx_path)
+                n_runs = 100
+                elapsed_time = np.array(profile_inference_time(ort_session, n_runs))
+                results.append({
+                    'net':                 net,
+                    'config':              config_name,
+                    'inference_time_mean': elapsed_time.mean(),
+                    'inference_time_std':  elapsed_time.std(),
+                })
 
 
 if __name__ == '__main__':
