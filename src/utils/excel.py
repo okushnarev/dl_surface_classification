@@ -242,6 +242,9 @@ def find_better_values(
 
 def convert_to_wide_format(df: pd.DataFrame, value_col: str = 'Stats_Acc') -> pd.DataFrame:
     df = df.copy()
-    df['Stats_Acc'] = df.apply(lambda row: row['Stats'].replace('Link', f"{row['Accuracy']:.4f}"), axis=1)
+
+    df['Accuracy_str'] = df['Accuracy'].map('{:.4f}'.format) if df['Accuracy'].dtype != 'O' else df['Accuracy']
+
+    df['Stats_Acc'] = df.apply(lambda row: row['Stats'].replace('Link', row['Accuracy_str']), axis=1)
     df = df.pivot(index='Net', columns='Feature set', values=value_col).reset_index()
     return df
