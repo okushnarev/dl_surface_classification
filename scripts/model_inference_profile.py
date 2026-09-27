@@ -5,6 +5,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+import onnx_tool
 import torch
 import yaml
 
@@ -138,11 +139,21 @@ def main():
                 ort_session = setup_ort_session(onnx_path)
                 n_runs = 100
                 elapsed_time = np.array(profile_inference_time(ort_session, n_runs))
+
+                # MACs profiling
+                model = onnx_tool.Model(onnx_path)
+                model.graph.shape_infer()
+                model.graph.profile()
+                total_macs = model.graph.macs[0]
+                total_params = model.graph.params
+
                 results.append({
                     'net':                 net,
                     'config':              config_name,
                     'inference_time_mean': elapsed_time.mean(),
                     'inference_time_std':  elapsed_time.std(),
+                    'macs': total_macs,
+                    'params': total_params,
                 })
     print(results)
 

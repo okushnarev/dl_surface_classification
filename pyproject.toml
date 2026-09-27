@@ -11,6 +11,7 @@ dependencies = [
     "matplotlib>=3.10.6",
     "numpy>=2.3.3",
     "onnx==1.18.0",
+    "onnx-tool>=1.0.1",
     "onnxruntime~=1.19.0",
     "optuna>=4.5.0",
     "pandas>=2.3.2",
