@@ -26,6 +26,7 @@ def parse_args():
     parser.add_argument('--configs', nargs='+', default=['belyaev_kushnarev'], help='Experiment YAML filename')
     parser.add_argument('--ckpt-type', type=str, choices=['last', 'best'],
                         default='last', help='Model\'s checkpoint type to load')
+    parser.add_argument('--onnx-threads', type=int, default=4, help='Intra threads for onnx runtime session')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
     return parser.parse_args()
 
@@ -138,7 +139,7 @@ def main():
                 # Inference time profiling
                 n_runs = 100
                 print(f'  Starting inference time profiling with {n_runs} runs')
-                ort_session = setup_ort_session(onnx_path)
+                ort_session = setup_ort_session(onnx_path, intra_op_num_threads=args.onnx_threads)
                 elapsed_time = np.array(profile_inference_time(ort_session, n_runs))
 
                 # MACs profiling
