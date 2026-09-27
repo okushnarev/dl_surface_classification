@@ -27,6 +27,10 @@ def parse_args():
     parser.add_argument('--ckpt-type', type=str, choices=['last', 'best'],
                         default='last', help='Model\'s checkpoint type to load')
     parser.add_argument('--onnx-threads', type=int, default=4, help='Intra threads for onnx runtime session')
+    parser.add_argument('--n-timing-runs', type=int, default=100,
+                        help='Number of inference experiments to measure elapsed time over')
+    parser.add_argument('--n-energy-runs', type=int, default=10_000,
+                        help='Number of inference experiments to measure consumed energy')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
     return parser.parse_args()
 
@@ -137,19 +141,17 @@ def main():
                 export_model_to_onnx(model, onnx_path, (1, seq_len, len(feature_cols)))
 
                 # Inference time profiling
-                n_runs = 100
-                print(f'  Starting inference time profiling with {n_runs} runs')
+                print(f'  Starting inference time profiling with {args.n_timing_runs} runs')
                 ort_session = setup_ort_session(onnx_path, intra_op_num_threads=args.onnx_threads)
-                elapsed_time = np.array(profile_inference_time(ort_session, n_runs))
+                elapsed_time = np.array(profile_inference_time(ort_session, args.n_timing_runs))
 
                 # MACs profiling
                 print(f'  Starting MAC and Params count')
                 total_macs, total_params = profile_mac_and_params_count(onnx_path)
 
                 # Energy profiling
-                n_energy_runs = 10_000
-                print(f'  Starting energy profiling with {n_energy_runs} runs')
-                energy_per_run = profile_energy_usage(ort_session, n_energy_runs)
+                print(f'  Starting energy profiling with {args.n_energy_runs} runs')
+                energy_per_run = profile_energy_usage(ort_session, args.n_energy_runs)
 
                 results.append({
                     'config':              config_name,
