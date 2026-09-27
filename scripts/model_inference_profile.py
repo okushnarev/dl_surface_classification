@@ -143,6 +143,7 @@ def main():
                     'inference_time_mean': elapsed_time.mean(),
                     'inference_time_std':  elapsed_time.std(),
                 })
+    print(results)
 
 
 if __name__ == '__main__':
