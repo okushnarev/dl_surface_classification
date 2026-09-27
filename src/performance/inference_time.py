@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
 
+import codegreen
 import numpy as np
 import onnxruntime as ort
 
@@ -50,3 +51,16 @@ def setup_ort_session(
     )
 
     return session
+
+
+def profile_energy_usage(session: ort.InferenceSession, n_runs: int = 100) -> float:
+    profile_inference_time(session, 0, 10)
+    task_name = 'forward_pass'
+    with codegreen.Session('onnx_inference', save_to_file=False) as s:
+        with s.task(task_name):
+            profile_inference_time(session, n_runs, 0)
+    energy_per_run = None
+    for task in s.tasks:
+        if task.name == task_name:
+            energy_per_run = task.energy_j / n_runs
+    return energy_per_run

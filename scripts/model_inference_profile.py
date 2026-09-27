@@ -3,7 +3,6 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-import codegreen
 import joblib
 import numpy as np
 import pandas as pd
@@ -16,7 +15,7 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.models.factory import get_model_components
-from src.performance.inference_time import profile_inference_time, setup_ort_session
+from src.performance.inference_time import profile_energy_usage, profile_inference_time, setup_ort_session
 from src.performance.onnx_export import export_model_to_onnx
 from src.performance.static_stats import profile_mac_and_params_count
 
@@ -149,15 +148,7 @@ def main():
                 # Energy profiling
                 n_energy_runs = 10_000
                 print(f'  Starting energy profiling with {n_energy_runs} runs')
-                task_name = 'forward_pass'
-                with codegreen.Session('onnx_inference', save_to_file=False) as s:
-                    with s.task(task_name):
-                        profile_inference_time(ort_session, n_energy_runs, 0)
-
-                energy_per_run = None
-                for task in s.tasks:
-                    if task.name == task_name:
-                        energy_per_run = task.energy_j / n_energy_runs
+                energy_per_run = profile_energy_usage(ort_session, n_energy_runs)
 
                 results.append({
                     'config':              config_name,
