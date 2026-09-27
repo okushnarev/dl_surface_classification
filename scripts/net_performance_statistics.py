@@ -43,6 +43,10 @@ def main():
     nets = sorted(args.nets, key=len, reverse=True)
 
     baseline_path, output_path = prepare_paths(args)
+    if args.column_format != 'separate':
+        new_out_dir = output_path.parent / args.column_format
+        new_out_dir.mkdir(exist_ok=True, parents=True)
+        output_path = new_out_dir / output_path.name
 
     # Process data
     long_sheet_name = 'Main'
