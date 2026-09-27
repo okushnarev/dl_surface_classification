@@ -41,6 +41,10 @@ def main():
     nets = sorted(args.nets, key=len, reverse=True)
     device = 'cpu'
 
+    output_name = args.output_name or '_'.join(args.configs)
+    output_path = ProjectPaths.get_tables_dir('profiling', args.ckpt_type) / f'{output_name}.csv'
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+
     results = []
     for config_name in args.configs:
         for net in nets:
@@ -177,7 +181,7 @@ def main():
                     'energy_per_run':      energy_per_run,
                 })
     df_res = pd.DataFrame(results)
-    print(df_res)
+    df_res.to_csv(output_path, index=False)
 
 
 if __name__ == '__main__':
