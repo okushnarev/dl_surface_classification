@@ -15,7 +15,7 @@ sys.path.append(str(project_root))
 
 from src.utils.paths import ProjectPaths
 from src.models.factory import get_model_components
-from src.performance.inference_time import profile_energy_usage, profile_inference_time, setup_ort_session
+from src.performance.inference_profiling import profile_energy_usage, profile_inference_time, setup_ort_session
 from src.performance.onnx_export import export_model_to_onnx
 from src.performance.static_stats import profile_mac_and_params_count
 
