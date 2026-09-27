@@ -42,8 +42,8 @@ def main():
     device = 'cpu'
 
     results = []
-    for net in nets:
-        for config_name in args.configs:
+    for config_name in args.configs:
+        for net in nets:
             exp_cfg_path = ProjectPaths.get_experiment_config_path(net, config_name)
             if not exp_cfg_path.exists():
                 print(f'Skipping {net}: Config not found at {exp_cfg_path}')
