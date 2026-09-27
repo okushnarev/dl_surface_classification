@@ -1,6 +1,29 @@
+import time
 from pathlib import Path
 
+import numpy as np
 import onnxruntime as ort
+
+
+def profile_inference_time(
+        session: ort.InferenceSession,
+        n_runs: int,
+        n_warmup_runs: int = 10,
+) -> list[float]:
+    sess_inputs = session.get_inputs()[0]
+    input_name = sess_inputs.name
+    dummy_inputs = np.random.randn(sess_inputs.shape).astype(np.float32)
+    
+    for _ in range(n_warmup_runs):
+        session.run(None, {input_name: dummy_inputs})
+
+    times = []
+    for _ in range(n_runs):
+        t0 = time.perf_counter()
+        outputs = session.run(None, {input_name: dummy_inputs})
+        times.append((time.perf_counter() - t0))
+
+    return times
 
 
 def setup_ort_session(
