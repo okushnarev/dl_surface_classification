@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 
 
-def export_model_to_onnx(model: nn.Module, save_path: Path, input_shape: tuple[int]) -> None:
+def export_model_to_onnx(model: nn.Module, save_path: Path, input_shape: tuple[int, ...]) -> None:
     dummy_input = torch.zeros(input_shape)
     torch.onnx.export(
         model,
