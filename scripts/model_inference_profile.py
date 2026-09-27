@@ -22,6 +22,8 @@ def parse_args():
     parser = ArgumentParser('Script for inference profiling')
     parser.add_argument('--nets', nargs='+', default=['rnn'], help='Networks to include in report')
     parser.add_argument('--configs', nargs='+', default=['belyaev_kushnarev'], help='Experiment YAML filename')
+    parser.add_argument('--ckpt-type', type=str, choices=['last', 'best'],
+                        default='last', help='Model\'s checkpoint type to load')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
     parser.add_argument('--column-format', type=str, choices=['separate', 'combined'], default='separate',
                         help='Whether to store mean and std data in separate columns or combined with ±. '
@@ -77,7 +79,7 @@ def main():
                     continue
 
                 # Checkpoint, scaler, label encoder
-                run_dir = ProjectPaths.get_run_dir(args.config_name, exp_name)
+                run_dir = ProjectPaths.get_run_dir(config_name, exp_name)
 
                 ckpt_path = run_dir / f'{args.ckpt_type}.pt'
                 scaler_path = run_dir / 'scaler.joblib'
@@ -103,7 +105,7 @@ def main():
                 if param_file:
                     cfg_path = Path(param_file)
                 else:
-                    cfg_path = ProjectPaths.get_params_path(net, args.config_name, exp_name)
+                    cfg_path = ProjectPaths.get_params_path(net, config_name, exp_name)
 
                 # Prepare config
                 seq_len: int = exp_args.get('seq_len', 10)
@@ -119,7 +121,7 @@ def main():
                     num_classes=num_classes,
                     sequence_length=seq_len
                 )
-                model = ModelClass(**model_cfg['model']).to(device, dtype=torch.bfloat16)
+                model = ModelClass(**model_cfg['model']).to(device)
 
                 # Load Weights
                 checkpoint = torch.load(ckpt_path, map_location=device)

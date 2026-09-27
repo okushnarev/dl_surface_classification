@@ -12,7 +12,7 @@ def profile_inference_time(
 ) -> list[float]:
     sess_inputs = session.get_inputs()[0]
     input_name = sess_inputs.name
-    dummy_inputs = np.random.randn(sess_inputs.shape).astype(np.float32)
+    dummy_inputs = np.random.randn(*sess_inputs.shape).astype(np.float32)
     
     for _ in range(n_warmup_runs):
         session.run(None, {input_name: dummy_inputs})
