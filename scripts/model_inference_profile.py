@@ -132,7 +132,7 @@ def main():
                     continue
 
                 onnx_path = run_dir / 'model.onnx'
-                export_model_to_onnx(model, onnx_path, (1, seq_len, num_classes))
+                export_model_to_onnx(model, onnx_path, (1, seq_len, len(feature_cols)))
 
                 # Inference time profiling
                 ort_session = setup_ort_session(onnx_path)
