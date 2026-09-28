@@ -30,6 +30,7 @@ class MambaConfig(BaseModel):
 
 class MambaClassifier(nn.Module):
     max_dim_size = 256
+
     def __init__(
             self,
             input_dim: int,

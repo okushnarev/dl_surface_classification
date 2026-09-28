@@ -10,6 +10,7 @@ from src.modules.positional_encoder import PositionalEncoding
 
 class Transformer(nn.Module):
     max_dim_size = 256
+
     def __init__(self,
                  input_dim: int,
                  encoder_layers: list[MLPLayerConfig],
