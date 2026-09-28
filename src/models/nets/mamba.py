@@ -1,8 +1,17 @@
 import json
+import logging
 from pathlib import Path
 from typing import Literal
 
-from mamba_ssm import Mamba2
+logger = logging.getLogger(__name__)
+
+try:
+    from mamba_ssm import Mamba2
+except ImportError as e:
+    logger.warning('Cannot import Mamba2 from mamba-ssm. Apparently, mamba-ssm is not installed.\n'
+                   'Fallback to local pure pytorch implementation')
+    from src.models.nets.pure_torch_mamba_core import Mamba2
+
 from pydantic import BaseModel
 from torch import Tensor, nn
 
