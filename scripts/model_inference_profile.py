@@ -19,6 +19,7 @@ from src.performance.inference_profiling import profile_energy_usage, profile_in
 from src.performance.onnx_export import export_model_to_onnx
 from src.performance.static_stats import profile_mac_and_params_count
 
+memory = joblib.Memory(project_root / '.math_cache', verbose=0)
 
 def parse_args():
     parser = ArgumentParser('Script for inference profiling')
@@ -32,6 +33,7 @@ def parse_args():
     parser.add_argument('--n-energy-runs', type=int, default=10_000,
                         help='Number of inference experiments to measure consumed energy')
     parser.add_argument('--output_name', type=str, default=None, help='Name of output file to overwrite default')
+    parser.add_argument('--no-cache', action='store_true', help='Ignore any existing cached results')
     return parser.parse_args()
 
 
@@ -141,18 +143,20 @@ def main():
                 onnx_path = run_dir / 'model.onnx'
                 export_model_to_onnx(model, onnx_path, (1, seq_len, len(feature_cols)))
 
-                # Inference time profiling
-                print(f'  Starting inference time profiling with {args.n_timing_runs} runs')
-                ort_session = setup_ort_session(onnx_path, intra_op_num_threads=args.onnx_threads)
-                elapsed_time = np.array(profile_inference_time(ort_session, args.n_timing_runs))
-
-                # MACs profiling
-                print(f'  Starting MAC and Params count')
-                total_macs, total_params = profile_mac_and_params_count(onnx_path)
-
-                # Energy profiling
-                print(f'  Starting energy profiling with {args.n_energy_runs} runs')
-                energy_per_run = profile_energy_usage(ort_session, args.n_energy_runs)
+                if args.no_cache:
+                    elapsed_time, energy_per_run, total_macs, total_params = run_profiling.call(
+                        onnx_path,
+                        args.n_timing_runs,
+                        args.n_energy_runs,
+                        args.onnx_threads,
+                    )
+                else:
+                    elapsed_time, energy_per_run, total_macs, total_params = run_profiling(
+                        onnx_path,
+                        args.n_timing_runs,
+                        args.n_energy_runs,
+                        args.onnx_threads,
+                    )
 
                 results.append({
                     'config':              config_name,
@@ -169,6 +173,20 @@ def main():
     df_res = pd.DataFrame(results)
     df_res.to_csv(output_path, index=False)
     print(f'Profiling results are save to {output_path}')
+
+@memory.cache
+def run_profiling(onnx_path, n_timing_runs, n_energy_runs, onnx_threads):
+    # Inference time profiling
+    print(f'  Starting inference time profiling with {n_timing_runs} runs')
+    ort_session = setup_ort_session(onnx_path, intra_op_num_threads=onnx_threads)
+    elapsed_time = np.array(profile_inference_time(ort_session, n_timing_runs))
+    # MACs profiling
+    print(f'  Starting MAC and Params count')
+    total_macs, total_params = profile_mac_and_params_count(onnx_path)
+    # Energy profiling
+    print(f'  Starting energy profiling with {n_energy_runs} runs')
+    energy_per_run = profile_energy_usage(ort_session, n_energy_runs)
+    return elapsed_time, energy_per_run, total_macs, total_params
 
 
 if __name__ == '__main__':
